@@ -1,4 +1,5 @@
 const categoryModel = require("../models/category.model");
+const { getPagination, getPaginationMeta } = require("../utils/pagination");
 
 const createCategoryController = async (req, res) => {
   try {
@@ -33,9 +34,13 @@ const createCategoryController = async (req, res) => {
 
 const getCategoriesController = async (req, res) => {
   try {
-    const categories = await categoryModel.find();
+    const { page, limit, skip } = getPagination(req);
+    const categories = await categoryModel.find().skip(skip).limit(limit);
+
+    const totalCategories = await categoryModel.countDocuments();
 
     res.status(201).json({
+      ...getPaginationMeta(totalCategories, page, limit),
       categories,
     });
   } catch (error) {

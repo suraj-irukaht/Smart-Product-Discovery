@@ -22,7 +22,16 @@ const productSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-
+    brand: {
+      type: String,
+      trim: true,
+      default: null,
+    },
+    stock: {
+      type: Number,
+      required: true,
+      default: 0,
+    },
     status: {
       type: String,
       enum: ["ACTIVE", "INACTIVE"],
@@ -45,6 +54,21 @@ const productSchema = new mongoose.Schema(
     timestamps: true,
   },
 );
+
+// 🔎 search optimization
+productSchema.index({ name: "text", brand: "text" });
+
+// 📦 filter optimization
+productSchema.index({ category_id: 1 });
+
+// 💰 price filter optimization
+productSchema.index({ price: 1 });
+
+// 👤 seller dashboard optimization
+productSchema.index({ seller_id: 1 });
+
+// 📅 sorting optimization
+productSchema.index({ createdAt: -1 });
 
 const productModel = mongoose.model("Product", productSchema);
 

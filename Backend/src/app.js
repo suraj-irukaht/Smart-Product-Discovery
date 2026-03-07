@@ -13,6 +13,9 @@ const authroutes = require("./routes/auth.route");
 const userRoutes = require("./routes/user.route");
 const categoryRoutes = require("./routes/category.route");
 const productRoutes = require("./routes/product.route");
+const favouriteRoutes = require("./routes/favourite.route");
+const cartRoutes = require("./routes/cart.route");
+const orderRoutes = require("./routes/order.route");
 
 /**
  * - Routes used
@@ -21,5 +24,8 @@ app.use("/api/auth", authroutes);
 app.use("/api/users", userRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/products", productRoutes);
+app.use("/api/favorites", favouriteRoutes);
+app.use("/api/cart", cartRoutes);
+app.use("/api/orders", orderRoutes);
 
 module.exports = app;
