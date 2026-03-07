@@ -16,6 +16,7 @@ const productRoutes = require("./routes/product.route");
 const favouriteRoutes = require("./routes/favourite.route");
 const cartRoutes = require("./routes/cart.route");
 const orderRoutes = require("./routes/order.route");
+//const reviewRoutes = require("./routes/product.review.route");
 
 /**
  * - Routes used
@@ -27,5 +28,6 @@ app.use("/api/products", productRoutes);
 app.use("/api/favorites", favouriteRoutes);
 app.use("/api/cart", cartRoutes);
 app.use("/api/orders", orderRoutes);
+//app.use("/api/products", reviewRoutes);
 
 module.exports = app;

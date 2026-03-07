@@ -32,6 +32,10 @@ const productSchema = new mongoose.Schema(
       required: true,
       default: 0,
     },
+    views: {
+      type: Number,
+      default: 0,
+    },
     status: {
       type: String,
       enum: ["ACTIVE", "INACTIVE"],

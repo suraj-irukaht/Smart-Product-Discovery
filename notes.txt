@@ -1,0 +1,4 @@
+1️⃣ Popular Products
+2️⃣ Related Products (same category)
+3️⃣ Recommended For You (user preferences)
+4️⃣ Trending Products

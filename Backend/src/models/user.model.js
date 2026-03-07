@@ -31,6 +31,12 @@ const userSchema = new mongoose.Schema(
       },
       default: "BUYER",
     },
+    preferences: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Category",
+      },
+    ],
     is_locked: {
       type: Boolean,
       default: false,

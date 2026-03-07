@@ -1,52 +1,62 @@
 const express = require("express");
 const router = express.Router();
 
-const {
-  createProductController,
-  getProductController,
-  getMyProductController,
-  getProductByIdController,
-  updateProductController,
-  deleteProductController,
-} = require("../controllers/product.controller");
+const discoveryRoutes = require("./product.discovery.routes");
+const sellerRoutes = require("./product.seller.routes");
+const reviewRoutes = require("./product.review.route");
+
 const { authMiddleware } = require("../middlewares/auth.middleware");
-const roleMiddleware = require("../middlewares/role.middleware");
+const authOptionalMiddleware = require("../middlewares/authOptional.middleware");
+
+const {
+  getProductController,
+  getProductByIdController,
+  getRecentlyViewedProductsController,
+} = require("../controllers/product.controller");
 
 /**
- * - Seller Routes
+ * ===============================
+ * Discovery Routes
+ * ===============================
  */
-router.post(
-  "/create",
-  authMiddleware,
-  roleMiddleware("SELLER"),
-  createProductController,
-);
+
+router.use("/", discoveryRoutes);
+
+/**
+ * ===============================
+ * Product review Routes
+ * ===============================
+ */
+
+router.use("/", reviewRoutes);
+
+/**
+ * ===============================
+ * Recently viewed Routes
+ * ===============================
+ */
 
 router.get(
-  "/my-products",
+  "/recently-viewed",
   authMiddleware,
-  roleMiddleware("SELLER"),
-  getMyProductController,
-);
-
-router.put(
-  "/:id",
-  authMiddleware,
-  roleMiddleware("SELLER"),
-  updateProductController,
-);
-
-router.delete(
-  "/:id",
-  authMiddleware,
-  roleMiddleware("SELLER"),
-  deleteProductController,
+  getRecentlyViewedProductsController,
 );
 
 /**
- * - Buyer Routes
+ * ===============================
+ * Buyer Product Routes
+ * ===============================
  */
+
 router.get("/get", getProductController);
-router.get("/:id", getProductByIdController);
+router.get("/:id", authMiddleware, getProductByIdController);
+
+/**
+ * ===============================
+ * Seller Routes
+ * ===============================
+ */
+
+router.use("/", sellerRoutes);
 
 module.exports = router;
