@@ -34,17 +34,20 @@ const createCategoryController = async (req, res) => {
 
 const getCategoriesController = async (req, res) => {
   try {
-    const { page, limit, skip } = getPagination(req);
-    const categories = await categoryModel.find().skip(skip).limit(limit);
+    // const { page, limit, skip } = getPagination(req);
+    // const categories = await categoryModel.find().skip(skip).limit(limit);
 
-    const totalCategories = await categoryModel.countDocuments();
+    // const totalCategories = await categoryModel.countDocuments();
 
-    res.status(201).json({
-      ...getPaginationMeta(totalCategories, page, limit),
+    const categories = await categoryModel.find().sort({ name: 1 });
+    const total = categories.length;
+
+    res.status(200).json({
       categories,
+      total,
     });
   } catch (error) {
-    res.status(401).json({
+    res.status(500).json({
       message: "Failed to fetch categories",
     });
   }
@@ -128,8 +131,48 @@ const getTopCategoriesController = async (req, res) => {
   }
 };
 
+const updateCategoryController = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, description } = req.body;
+
+    const existing = await categoryModel.findOne({
+      name: name.toLowerCase(),
+      _id: { $ne: id },
+    });
+    if (existing)
+      return res.status(400).json({ message: "Category name already exists" });
+
+    const category = await categoryModel.findByIdAndUpdate(
+      id,
+      { name, description },
+      { new: true },
+    );
+    if (!category)
+      return res.status(404).json({ message: "Category not found" });
+
+    res.status(200).json({ message: "Category updated", category });
+  } catch (error) {
+    res.status(500).json({ message: "Failed to update category" });
+  }
+};
+
+const deleteCategoryController = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const category = await categoryModel.findByIdAndDelete(id);
+    if (!category)
+      return res.status(404).json({ message: "Category not found" });
+    res.status(200).json({ message: "Category deleted" });
+  } catch (error) {
+    res.status(500).json({ message: "Failed to delete category" });
+  }
+};
+
 module.exports = {
   createCategoryController,
   getCategoriesController,
   getTopCategoriesController,
+  updateCategoryController,
+  deleteCategoryController,
 };

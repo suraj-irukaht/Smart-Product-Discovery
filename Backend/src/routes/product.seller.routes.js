@@ -11,6 +11,12 @@ const {
   deleteProductController,
 } = require("../controllers/product.controller");
 
+const multer = require("multer");
+const upload = multer({ storage: multer.memoryStorage() });
+
+router.use(authMiddleware);
+router.use(roleMiddleware("SELLER"));
+
 /**
  * ===============================
  * Seller Product Routes
@@ -18,31 +24,19 @@ const {
  */
 
 router.post(
-  "/create",
-  authMiddleware,
-  roleMiddleware("SELLER"),
+  "/seller/create",
+  upload.array("images", 10),
   createProductController,
 );
 
-router.get(
-  "/my-products",
-  authMiddleware,
-  roleMiddleware("SELLER"),
-  getMyProductController,
-);
+router.get("/seller/my-products", getMyProductController);
 
 router.put(
-  "/:id",
-  authMiddleware,
-  roleMiddleware("SELLER"),
+  "/seller/update/:id",
+  upload.array("images", 10),
   updateProductController,
 );
 
-router.delete(
-  "/:id",
-  authMiddleware,
-  roleMiddleware("SELLER"),
-  deleteProductController,
-);
+router.delete("/seller/delete/:id", deleteProductController);
 
 module.exports = router;

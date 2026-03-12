@@ -8,6 +8,8 @@ const {
   getAllOrderController,
   getOrderDetailsController,
   cancelOrderController,
+  getSellerOrdersController,
+  updateSellerOrderStatusController,
 } = require("../controllers/order.controller");
 
 const { authMiddleware } = require("../middlewares/auth.middleware");
@@ -56,4 +58,17 @@ router.patch(
   cancelOrderController,
 );
 
+router.get(
+  "/seller",
+  authMiddleware,
+  roleMiddleware("SELLER"),
+  getSellerOrdersController,
+);
+
+router.patch(
+  "/seller/:orderId/status",
+  authMiddleware,
+  roleMiddleware("SELLER"),
+  updateSellerOrderStatusController,
+);
 module.exports = router;

@@ -1,8 +1,15 @@
 const express = require("express");
+const cors = require("cors");
 const cookieParser = require("cookie-parser");
 
 const app = express();
 
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+    credentials: true,
+  }),
+);
 app.use(express.json());
 app.use(cookieParser());
 
@@ -16,6 +23,7 @@ const productRoutes = require("./routes/product.route");
 const favouriteRoutes = require("./routes/favourite.route");
 const cartRoutes = require("./routes/cart.route");
 const orderRoutes = require("./routes/order.route");
+const adminRoutes = require("./routes/admin.route");
 //const reviewRoutes = require("./routes/product.review.route");
 
 /**
@@ -28,6 +36,6 @@ app.use("/api/products", productRoutes);
 app.use("/api/favorites", favouriteRoutes);
 app.use("/api/cart", cartRoutes);
 app.use("/api/orders", orderRoutes);
-//app.use("/api/products", reviewRoutes);
+app.use("/api/admin", adminRoutes);
 
 module.exports = app;

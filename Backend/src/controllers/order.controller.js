@@ -268,6 +268,88 @@ const cancelOrderController = async (req, res) => {
   }
 };
 
+/**
+ * GET /seller/orders
+ * Returns all orders that contain at least one of the seller's products.
+ */
+const getSellerOrdersController = async (req, res) => {
+  try {
+    const sellerId = req.user._id;
+    const { page, limit, skip } = getPagination(req);
+    const { status } = req.query;
+
+    // Find all order items belonging to this seller's products
+    const sellerItems = await orderItemModel
+      .find()
+      .populate({ path: "product_id", match: { seller_id: sellerId } });
+
+    // Keep only items whose product belongs to this seller
+    const filtered = sellerItems.filter((i) => i.product_id !== null);
+
+    // Get unique order IDs
+    const orderIds = [...new Set(filtered.map((i) => String(i.order_id)))];
+
+    // Build filter
+    const filter = { _id: { $in: orderIds } };
+    if (status && status !== "ALL") filter.status = status;
+
+    const total = await orderModel.countDocuments(filter);
+    const orders = await orderModel
+      .find(filter)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .populate("user_id", "name email");
+
+    // Attach only this seller's items to each order
+    const result = await Promise.all(
+      orders.map(async (order) => {
+        const items = await orderItemModel
+          .find({ order_id: order._id })
+          .populate({ path: "product_id", match: { seller_id: sellerId } });
+        const sellerOnlyItems = items.filter((i) => i.product_id !== null);
+        return { order, items: sellerOnlyItems };
+      }),
+    );
+
+    res.status(200).json({
+      ...getPaginationMeta(total, page, limit),
+      orders: result,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to fetch seller orders" });
+  }
+};
+
+/**
+ * PATCH /seller/orders/:orderId/status
+ * Seller can update status to SHIPPED or DELIVERED only.
+ */
+const updateSellerOrderStatusController = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const { status } = req.body;
+
+    const allowed = ["SHIPPED", "DELIVERED"];
+    if (!allowed.includes(status)) {
+      return res
+        .status(400)
+        .json({ message: "Invalid status. Allowed: SHIPPED, DELIVERED" });
+    }
+
+    const order = await orderModel.findById(orderId);
+    if (!order) return res.status(404).json({ message: "Order not found" });
+
+    order.status = status;
+    await order.save();
+
+    res.status(200).json({ message: "Order status updated", order });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to update order status" });
+  }
+};
+
 module.exports = {
   createOrderController,
   getOrderController,
@@ -275,4 +357,6 @@ module.exports = {
   getAllOrderController,
   getOrderDetailsController,
   cancelOrderController,
+  getSellerOrdersController, // ← add
+  updateSellerOrderStatusController, // ← add
 };

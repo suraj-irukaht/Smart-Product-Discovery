@@ -12,7 +12,9 @@ const { sendRegistrationEmail } = require("../services/email.service");
  */
 
 async function registerUserController(req, res) {
-  const { name, email, password, role, is_locked } = req.body;
+  //const { name, email, password, role, is_locked } = req.body;
+  const { name, email, password, is_locked, shopName } = req.body;
+  const role = req.registrationRole || "BUYER";
 
   const isExists = await userModel.findOne({ email });
 
@@ -28,18 +30,22 @@ async function registerUserController(req, res) {
     password,
     role,
     is_locked,
+    shopName,
   });
 
   const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET_KEY, {
     expiresIn: "2d",
   });
-  res.cookie("token", token);
+  res.cookie("token", token, { httpOnly: true });
 
   res.status(201).json({
     user: {
       _id: user._id,
       name: user.name,
       email: user.email,
+      role: user.role,
+      shopName: user.shopName,
+      is_locked: user.is_locked,
     },
     token,
   });
@@ -58,7 +64,11 @@ async function registerUserController(req, res) {
 async function loginUserController(req, res) {
   const { email, password } = req.body;
 
+  //console.log(email, password);
+
   const user = await userModel.findOne({ email }).select("+password");
+
+  console.log(user);
 
   if (!user) {
     return res.status(401).json({
@@ -66,9 +76,7 @@ async function loginUserController(req, res) {
     });
   }
 
-  const isValidpassword = await user.comparePassword(password);
-
-  if (!isValidpassword) {
+  if (!(await user.comparePassword(password))) {
     return res.status(401).json({
       message: "Email or password is incorrect",
     });
@@ -77,18 +85,33 @@ async function loginUserController(req, res) {
   const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET_KEY, {
     expiresIn: "2d",
   });
+
   res.cookie("token", token);
-  res.status(201).json({
+
+  res.status(200).json({
     user: {
       _id: user._id,
       name: user.name,
       email: user.email,
+      role: user.role,
     },
     token,
   });
 }
 
+async function logoutUserController(req, res) {
+  res.clearCookie("token");
+  res.status(200).json({ message: "Logged out successfully" });
+}
+
 module.exports = {
   registerUserController,
   loginUserController,
+  logoutUserController,
+};
+
+module.exports = {
+  registerUserController,
+  loginUserController,
+  logoutUserController,
 };

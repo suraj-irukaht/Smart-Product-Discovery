@@ -88,15 +88,17 @@ const getFavoritesController = async (req, res) => {
 
     const favorites = await favoriteModel
       .find(filter)
+      .populate("product_id")
       .skip(skip)
-      .limit(limit)
-      .populate("product_id");
+      .limit(limit);
+
+    const validFavorites = favorites.filter((f) => f.product_id !== null);
 
     const totalFavorites = await favoriteModel.countDocuments(filter);
 
     res.status(200).json({
       ...getPaginationMeta(totalFavorites, page, limit),
-      favorites,
+      favorites: validFavorites,
     });
   } catch (error) {
     res.status(500).json({

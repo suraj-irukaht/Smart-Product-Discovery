@@ -6,13 +6,20 @@ const sellerRoutes = require("./product.seller.routes");
 const reviewRoutes = require("./product.review.route");
 
 const { authMiddleware } = require("../middlewares/auth.middleware");
-const authOptionalMiddleware = require("../middlewares/authOptional.middleware");
+const roleMiddleware = require("../middlewares/role.middleware");
 
 const {
   getProductController,
   getProductByIdController,
   getRecentlyViewedProductsController,
 } = require("../controllers/product.controller");
+
+router.get(
+  "/",
+  authMiddleware,
+  roleMiddleware("BUYER", "ADMIN"),
+  getProductController,
+);
 
 /**
  * ===============================
@@ -41,14 +48,12 @@ router.get(
   authMiddleware,
   getRecentlyViewedProductsController,
 );
-
 /**
  * ===============================
  * Buyer Product Routes
  * ===============================
  */
 
-router.get("/get", getProductController);
 router.get("/:id", authMiddleware, getProductByIdController);
 
 /**

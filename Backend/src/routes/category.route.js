@@ -5,6 +5,8 @@ const {
   createCategoryController,
   getCategoriesController,
   getTopCategoriesController,
+  updateCategoryController,
+  deleteCategoryController,
 } = require("../controllers/category.controller");
 
 const { authMiddleware } = require("../middlewares/auth.middleware");
@@ -16,12 +18,25 @@ router.post(
   roleMiddleware("ADMIN"),
   createCategoryController,
 );
-router.get("/get", getCategoriesController);
+router.get("/", getCategoriesController);
 
 /**
  * Get most popular categories based on product sales
  * GET /categories/top
  */
 router.get("/top", getTopCategoriesController);
+
+router.put(
+  "/:id",
+  authMiddleware,
+  roleMiddleware("ADMIN"),
+  updateCategoryController,
+);
+router.delete(
+  "/:id",
+  authMiddleware,
+  roleMiddleware("ADMIN"),
+  deleteCategoryController,
+);
 
 module.exports = router;

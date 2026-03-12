@@ -15,7 +15,7 @@ const {
 router.post(
   "/:id/review",
   authMiddleware,
-  roleMiddleware("BUYER"),
+
   addReviewController,
 );
 

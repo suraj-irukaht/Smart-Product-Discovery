@@ -17,6 +17,10 @@ const userSchema = new mongoose.Schema(
       required: [true, "Name is required"],
       trim: true,
     },
+    phone: {
+      type: String,
+      trim: true,
+    },
     password: {
       type: String,
       required: [true, "Password is required"],
@@ -30,6 +34,11 @@ const userSchema = new mongoose.Schema(
         message: "Status must be either ADMIN, SELLER, or BUYER",
       },
       default: "BUYER",
+    },
+    shopName: {
+      type: String,
+      trim: true,
+      // not required — only sellers have it
     },
     preferences: [
       {

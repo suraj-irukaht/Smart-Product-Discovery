@@ -18,10 +18,13 @@ const productSchema = new mongoose.Schema(
       required: true,
     },
 
-    image_url: {
-      type: String,
-      required: true,
-    },
+    image_url: [
+      {
+        type: String,
+        required: true,
+        isMain: Boolean,
+      },
+    ],
     brand: {
       type: String,
       trim: true,
@@ -53,6 +56,7 @@ const productSchema = new mongoose.Schema(
       ref: "Category",
       required: true,
     },
+    mainImage: String,
   },
   {
     timestamps: true,

@@ -1,13 +1,15 @@
 const mongoose = require("mongoose");
 const productModel = require("../models/product.model");
 const categoryModel = require("../models/category.model");
+const userModel = require("../models/user.model");
 const recentlyViewedModel = require("../models/recentlyViewed.model");
 const orderItemModel = require("../models/orderItem.model");
 const { getPagination, getPaginationMeta } = require("../utils/pagination");
+const uploadFile = require("../services/storage.service");
 
 const createProductController = async (req, res) => {
   try {
-    const { name, description, price, image_url, brand, stock, category_id } =
+    const { name, description, price, brand, stock, category_id, mainImage } =
       req.body;
 
     // check if category exists
@@ -19,14 +21,27 @@ const createProductController = async (req, res) => {
       });
     }
 
+    const mainIndex = Number(req.body.mainImage || 0);
+
+    const files = req.files || [];
+
+    const uploadedImages = await Promise.all(
+      files.map(async (file) => {
+        return await uploadFile(file);
+      }),
+    );
+
+    const image_urls = uploadedImages.map((img) => img.url);
+
     const product = await productModel.create({
       name,
       description,
       price,
-      image_url,
       brand,
       stock,
       category_id,
+      image_url: image_urls,
+      mainImage: image_urls[mainIndex],
       seller_id: req.user._id, // seller comes from auth middleware
     });
 
@@ -42,78 +57,6 @@ const createProductController = async (req, res) => {
     });
   }
 };
-/** old will recplace it later
-async function getProductController(req, res) {
-  try {
-    const { search, category, minPrice, maxPrice, sort } = req.query;
-
-    let filter = {};
-    // 🔎 search by product name OR brand OR category
-    if (search) {
-      // find categories that match search
-      const categories = await categoryModel.find({
-        name: { $regex: search, $options: "i" },
-      });
-      const categoryIds = categories.map((cat) => cat._id);
-      filter.$or = [
-        { name: { $regex: search, $options: "i" } },
-        { brand: { $regex: search, $options: "i" } },
-        { category_id: { $in: categoryIds } },
-      ];
-    }
-    // const page = Number(req.query.page) || 1;
-    // const limit = Number(req.query.limit) || 10;
-    const { page, limit, skip } = getPagination(req);
-
-    //const skip = (page - 1) * limit;
-
-    // 📦 filter by category
-    if (category) {
-      filter.category_id = category;
-    }
-
-    // 💰 price filter
-    if (minPrice || maxPrice) {
-      filter.price = {};
-
-      if (minPrice) filter.price.$gte = Number(minPrice);
-
-      if (maxPrice) filter.price.$lte = Number(maxPrice);
-    }
-
-    // create query
-    let query = productModel
-      .find(filter)
-      .populate("category_id", "name")
-      .populate("seller_id", "name");
-
-    // 🔄 sorting
-    if (sort === "price_asc") query = query.sort({ price: 1 });
-
-    if (sort === "price_desc") query = query.sort({ price: -1 });
-
-    if (sort === "newest") query = query.sort({ createdAt: -1 });
-
-    if (sort === "oldest") query = query.sort({ createdAt: 1 });
-
-    const products = await query.skip(skip).limit(limit);
-
-    const totalProducts = await productModel.countDocuments(filter);
-
-    res.status(200).json({
-      //total: products.length,
-      ...getPaginationMeta(totalProducts, page, limit),
-      products,
-    });
-  } catch (error) {
-    console.error(error);
-
-    res.status(500).json({
-      message: "Failed to fetch products",
-    });
-  }
-}
-  */
 
 async function getProductController(req, res) {
   try {
@@ -162,21 +105,58 @@ async function getProductController(req, res) {
           as: "category",
         },
       },
+      {
+        $lookup: {
+          from: "appusers", // ← was "users"
+          localField: "seller_id",
+          foreignField: "_id",
+          as: "seller",
+        },
+      },
+      {
+        $unwind: {
+          path: "$appusers",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
 
-      { $unwind: "$category" },
+      {
+        $unwind: {
+          path: "$category",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
 
       // join seller
       {
         $lookup: {
-          from: "users",
+          from: "appusers",
           localField: "seller_id",
           foreignField: "_id",
           as: "seller",
         },
       },
 
-      { $unwind: "$seller" },
-
+      {
+        $unwind: {
+          path: "$seller",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $project: {
+          name: 1,
+          price: 1,
+          brand: 1,
+          stock: 1,
+          status: 1,
+          image_url: 1,
+          mainImage: 1,
+          category: { name: 1 },
+          seller: { name: 1, email: 1 },
+          createdAt: 1,
+        },
+      },
       { $sort: sortOption },
 
       { $skip: skip },
@@ -216,58 +196,7 @@ async function getMyProductController(req, res) {
     res.status(500).json({ message: "Failed to fetch products" });
   }
 }
-/**
-async function getProductByIdController(req, res) {
-  try {
-    const productId = req.params.id;
 
-    // validate ObjectId
-    if (!mongoose.Types.ObjectId.isValid(productId)) {
-      return res.status(400).json({
-        message: "Invalid product id",
-      });
-    }
-
-    const product = await productModel
-      .findById(productId)
-      .populate("category_id", "name")
-      .populate("seller_id", "name email");
-
-    if (!product) {
-      return res.status(404).json({
-        message: "Product not found",
-      });
-    }
-
-    // save recently viewed (only if logged in)
-    if (req.user) {
-      await recentlyViewedModel.findOneAndUpdate(
-        {
-          user_id: req.user._id,
-          product_id: productId,
-        },
-        {
-          $set: { viewed_at: new Date() },
-        },
-        {
-          upsert: true,
-          new: true,
-        },
-      );
-    }
-
-    res.status(200).json({
-      product,
-    });
-  } catch (error) {
-    console.error(error);
-
-    res.status(500).json({
-      message: "Failed to fetch product",
-    });
-  }
-}
-*/
 /**
  * Get single product by ID
  * Also tracks:
@@ -340,7 +269,26 @@ const getProductByIdController = async (req, res) => {
 const updateProductController = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, description, price, image_url, category_id } = req.body;
+
+    const {
+      name,
+      description,
+      price,
+      brand,
+      stock,
+      category_id,
+      discountPrice,
+    } = req.body;
+
+    console.log(
+      name,
+      description,
+      price,
+      brand,
+      stock,
+      category_id,
+      discountPrice,
+    );
 
     const product = await productModel.findById(id);
 
@@ -350,22 +298,36 @@ const updateProductController = async (req, res) => {
       });
     }
 
-    // check ownership (very important)
     if (product.seller_id.toString() !== req.user._id.toString()) {
       return res.status(403).json({
         message: "You are not allowed to update this product",
       });
     }
 
+    const updateData = {
+      name,
+      description,
+      price,
+      brand,
+      stock,
+      category_id,
+      discountPrice,
+    };
+
+    if (req.files && req.files.length > 0) {
+      const uploaded = await Promise.all(
+        req.files.map((file) => uploadFile(file)),
+      );
+
+      const urls = uploaded.map((r) => r.url);
+
+      updateData.image_url = urls;
+      updateData.mainImage = urls[Number(req.body.mainImage) || 0];
+    }
+
     const updatedProduct = await productModel.findByIdAndUpdate(
       id,
-      {
-        name,
-        description,
-        price,
-        image_url,
-        category_id,
-      },
+      updateData,
       { new: true },
     );
 
