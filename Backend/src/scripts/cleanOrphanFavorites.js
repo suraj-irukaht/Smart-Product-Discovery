@@ -1,4 +1,3 @@
-// Backend: scripts/cleanOrphanFavorites.js
 const mongoose = require("mongoose");
 const favoriteModel = require("../models/favorite.model");
 require("../models/product.model");

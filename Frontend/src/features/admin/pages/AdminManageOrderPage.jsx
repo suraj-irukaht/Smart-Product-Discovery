@@ -1,19 +1,41 @@
-import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useAllOrders, useUpdateOrderStatus } from "@features/admin";
 import Pagination from "@/components/ui/Pagination";
 import { PAGINATION } from "@/config/config.pagination";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-const STATUS_COLORS = {
-  PENDING: { bg: "#fef9c3", text: "#854d0e" },
-  CONFIRMED: { bg: "#dbeafe", text: "#1e40af" },
-  PAID: { bg: "#d1fae5", text: "#065f46" },
-  SHIPPED: { bg: "#ede9fe", text: "#5b21b6" },
-  DELIVERED: { bg: "#dcfce7", text: "#15803d" },
-  CANCELLED: { bg: "#fee2e2", text: "#991b1b" },
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
+import { ShoppingCart, User, Calendar, DollarSign, Hash } from "lucide-react";
+
+// ── Status config ────────────────────────────────────────────
+const STATUS_VARIANT = {
+  PENDING:
+    "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
+  CONFIRMED: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
+  PAID: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400",
+  SHIPPED:
+    "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400",
+  DELIVERED:
+    "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400",
+  CANCELLED: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
 };
 
-const ALLOWED_TRANSITIONS = ["CONFIRMED", "SHIPPED", "DELIVERED", "CANCELLED"];
+const ALLOWED_TRANSITIONS = [
+  "PAID",
+  "CONFIRMED",
+  "SHIPPED",
+  "DELIVERED",
+  "CANCELLED",
+];
+
+const TERMINAL = ["DELIVERED", "CANCELLED"];
 
 export default function AdminManageOrderPage() {
   const [searchParams] = useSearchParams();
@@ -26,220 +48,167 @@ export default function AdminManageOrderPage() {
   const orders = data?.orders ?? [];
   const totalPages = data?.totalPages ?? 1;
 
-  const handleStatusChange = (orderId, status) => {
-    updateStatus({ orderId, status });
-  };
-
   return (
-    <div
-      className="min-h-screen p-6"
-      style={{ backgroundColor: "var(--color-background)" }}
-    >
-      <div style={{ maxWidth: "1000px", margin: "0 auto" }}>
-        {/* Header */}
-        <div className="mb-6">
-          <h1
-            className="text-2xl font-bold"
-            style={{ color: "var(--color-foreground)" }}
-          >
-            Manage Orders
-          </h1>
-          <p
-            className="text-sm mt-1"
-            style={{ color: "var(--color-muted-foreground)" }}
-          >
-            {data?.total ?? 0} total orders
-          </p>
-        </div>
-
-        {/* Loading */}
-        {isLoading && (
-          <div className="flex justify-center py-20">
-            <svg
-              className="animate-spin h-8 w-8"
-              viewBox="0 0 24 24"
-              fill="none"
-              style={{ color: "var(--color-primary)" }}
-            >
-              <circle
-                className="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="4"
-              />
-              <path
-                className="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8v8H4z"
-              />
-            </svg>
-          </div>
-        )}
-
-        {/* Empty */}
-        {!isLoading && orders.length === 0 && (
-          <div
-            className="text-center py-20 rounded-xl border-2 border-dashed"
-            style={{ borderColor: "var(--color-border)" }}
-          >
-            <p className="text-4xl mb-3">🛒</p>
-            <p
-              className="font-medium"
-              style={{ color: "var(--color-foreground)" }}
-            >
-              No orders yet
+    <div className="min-h-screen bg-background p-4 md:p-6">
+      <div className="max-w-4xl mx-auto space-y-6">
+        {/* ── Header ──────────────────────────────────── */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">Orders</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              {data?.total ?? 0} total orders
             </p>
           </div>
+          <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950 flex items-center justify-center">
+            <ShoppingCart className="w-5 h-5 text-blue-500" />
+          </div>
+        </div>
+
+        <Separator />
+
+        {/* ── Loading skeletons ────────────────────────── */}
+        {isLoading && (
+          <div className="space-y-3">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Card key={i} className="animate-pulse">
+                <CardContent className="p-5 space-y-3">
+                  <div className="flex justify-between">
+                    <div className="h-4 w-28 bg-muted rounded" />
+                    <div className="h-5 w-20 bg-muted rounded-full" />
+                  </div>
+                  <div className="h-3 w-40 bg-muted rounded" />
+                  <div className="h-3 w-24 bg-muted rounded" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         )}
 
-        {/* Orders Table */}
+        {/* ── Empty ───────────────────────────────────── */}
+        {!isLoading && orders.length === 0 && (
+          <Card className="border-dashed">
+            <CardContent className="flex flex-col items-center justify-center py-20 gap-3">
+              <ShoppingCart className="w-10 h-10 text-muted-foreground" />
+              <p className="font-medium text-foreground">No orders yet</p>
+              <p className="text-sm text-muted-foreground">
+                Orders will appear here once buyers check out.
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* ── Order Cards ─────────────────────────────── */}
         {!isLoading && orders.length > 0 && (
-          <div
-            className="rounded-xl border overflow-hidden"
-            style={{
-              borderColor: "var(--color-border)",
-              backgroundColor: "var(--color-card)",
-            }}
-          >
-            <table className="w-full text-sm">
-              <thead>
-                <tr
-                  style={{
-                    borderBottom: "1px solid var(--color-border)",
-                    backgroundColor: "var(--color-muted)",
-                  }}
-                >
-                  {[
-                    "Order ID",
-                    "Buyer",
-                    "Amount",
-                    "Date",
-                    "Status",
-                    "Action",
-                  ].map((h) => (
-                    <th
-                      key={h}
-                      className="px-4 py-3 text-left font-medium"
-                      style={{ color: "var(--color-muted-foreground)" }}
-                    >
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {orders.map((order, i) => (
-                  <tr
-                    key={order._id}
-                    style={{
-                      borderBottom:
-                        i < orders.length - 1
-                          ? "1px solid var(--color-border)"
-                          : "none",
-                    }}
-                  >
-                    {/* Order ID */}
-                    <td
-                      className="px-4 py-3 font-mono text-xs"
-                      style={{ color: "var(--color-muted-foreground)" }}
-                    >
-                      #{order._id.slice(-6).toUpperCase()}
-                    </td>
-
-                    {/* Buyer */}
-                    <td className="px-4 py-3">
-                      <p
-                        className="font-medium"
-                        style={{ color: "var(--color-foreground)" }}
-                      >
-                        {order.user_id?.name ?? "—"}
-                      </p>
-                      <p
-                        className="text-xs"
-                        style={{ color: "var(--color-muted-foreground)" }}
-                      >
-                        {order.user_id?.email ?? ""}
-                      </p>
-                    </td>
-
-                    {/* Amount */}
-                    <td
-                      className="px-4 py-3 font-medium"
-                      style={{ color: "var(--color-foreground)" }}
-                    >
-                      ${Number(order.total_amount).toFixed(2)}
-                    </td>
-
-                    {/* Date */}
-                    <td
-                      className="px-4 py-3 text-xs"
-                      style={{ color: "var(--color-muted-foreground)" }}
-                    >
-                      {new Date(order.createdAt).toLocaleDateString()}
-                    </td>
-
-                    {/* Status Badge */}
-                    <td className="px-4 py-3">
-                      <span
-                        className="rounded-full px-2.5 py-1 text-xs font-semibold"
-                        style={{
-                          backgroundColor:
-                            STATUS_COLORS[order.status]?.bg ?? "#f3f4f6",
-                          color: STATUS_COLORS[order.status]?.text ?? "#374151",
-                        }}
-                      >
-                        {order.status}
-                      </span>
-                    </td>
-
-                    {/* Status Dropdown */}
-                    <td className="px-4 py-3">
-                      {order.status === "CANCELLED" ||
-                      order.status === "DELIVERED" ? (
-                        <span
-                          className="text-xs"
-                          style={{ color: "var(--color-muted-foreground)" }}
-                        >
-                          No actions
-                        </span>
-                      ) : (
-                        <select
-                          value={order.status}
-                          disabled={isPending}
-                          onChange={(e) =>
-                            handleStatusChange(order._id, e.target.value)
-                          }
-                          className="rounded-lg border px-2 py-1 text-xs outline-none"
-                          style={{
-                            borderColor: "var(--color-border)",
-                            backgroundColor: "var(--color-background)",
-                            color: "var(--color-foreground)",
-                          }}
-                        >
-                          <option value={order.status} disabled>
-                            {order.status}
-                          </option>
-                          {ALLOWED_TRANSITIONS.filter(
-                            (s) => s !== order.status,
-                          ).map((s) => (
-                            <option key={s} value={s}>
-                              {s}
-                            </option>
-                          ))}
-                        </select>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="space-y-3">
+            {orders.map((order) => (
+              <OrderCard
+                key={order._id}
+                order={order}
+                isPending={isPending}
+                onStatusChange={(status) =>
+                  updateStatus({ orderId: order._id, status })
+                }
+              />
+            ))}
           </div>
         )}
 
         <Pagination totalPages={totalPages} />
       </div>
     </div>
+  );
+}
+
+// ── Single order card ────────────────────────────────────────
+function OrderCard({ order, isPending, onStatusChange }) {
+  const isTerminal = TERMINAL.includes(order.status);
+  const nextOptions = ALLOWED_TRANSITIONS.filter((s) => s !== order.status);
+
+  return (
+    <Card className="border hover:shadow-md transition-shadow duration-200">
+      <CardContent className="p-5">
+        {/* Row 1: Order ID + Status badge */}
+        <div className="flex items-start justify-between gap-3 mb-4">
+          <div className="flex items-center gap-2">
+            <Hash className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+            <span className="font-mono text-xs font-semibold text-muted-foreground tracking-wider">
+              {order._id.slice(-8).toUpperCase()}
+            </span>
+          </div>
+          <span
+            className={`text-xs font-semibold px-2.5 py-1 rounded-full shrink-0 ${
+              STATUS_VARIANT[order.status] ?? "bg-muted text-muted-foreground"
+            }`}
+          >
+            {order.status}
+          </span>
+        </div>
+
+        {/* Row 2: Meta info grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
+          <div className="flex items-center gap-2">
+            <User className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+            <div className="min-w-0">
+              <p className="text-xs font-medium text-foreground truncate">
+                {order.user_id?.name ?? "—"}
+              </p>
+              <p className="text-[11px] text-muted-foreground truncate">
+                {order.user_id?.email ?? ""}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <DollarSign className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+            <div>
+              <p className="text-xs font-semibold text-foreground">
+                ${Number(order.total_amount).toFixed(2)}
+              </p>
+              <p className="text-[11px] text-muted-foreground">
+                {order.items?.length ?? 0} item
+                {order.items?.length !== 1 ? "s" : ""}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Calendar className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+            <p className="text-xs text-muted-foreground">
+              {new Date(order.createdAt).toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+                year: "numeric",
+              })}
+            </p>
+          </div>
+        </div>
+
+        <Separator className="mb-4" />
+
+        {/* Row 3: Action */}
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-xs text-muted-foreground">Update status</p>
+
+          {isTerminal ? (
+            <span className="text-xs text-muted-foreground italic">
+              No further actions
+            </span>
+          ) : (
+            <Select disabled={isPending} onValueChange={onStatusChange}>
+              <SelectTrigger className="w-40 h-8 text-xs">
+                <SelectValue placeholder="Change to..." />
+              </SelectTrigger>
+              <SelectContent>
+                {nextOptions.map((s) => (
+                  <SelectItem key={s} value={s} className="text-xs">
+                    {s}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        </div>
+      </CardContent>
+    </Card>
   );
 }

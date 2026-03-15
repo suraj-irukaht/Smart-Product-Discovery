@@ -1,111 +1,105 @@
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { User, Mail, Calendar, Store, Lock, Unlock } from "lucide-react";
+
 export default function AdminUsersTable({ users, onToggleLock, isPending }) {
+  if (users.length === 0) return null;
+
   return (
-    <div
-      className="rounded-xl border overflow-hidden"
-      style={{
-        borderColor: "var(--color-border)",
-        backgroundColor: "var(--color-card)",
-      }}
-    >
-      <table className="w-full text-sm">
-        <thead>
-          <tr
-            style={{
-              borderBottom: "1px solid var(--color-border)",
-              backgroundColor: "var(--color-muted)",
-            }}
-          >
-            {["Name", "Email", "Joined", "Status", "Action"].map((h) => (
-              <th
-                key={h}
-                className="px-4 py-3 text-left font-medium"
-                style={{ color: "var(--color-muted-foreground)" }}
-              >
-                {h}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {users.map((user, i) => (
-            <tr
-              key={user._id}
-              style={{
-                borderBottom:
-                  i < users.length - 1
-                    ? "1px solid var(--color-border)"
-                    : "none",
-              }}
-            >
-              {/* Name */}
-              <td className="px-4 py-3">
-                <p
-                  className="font-medium"
-                  style={{ color: "var(--color-foreground)" }}
-                >
-                  {user.name}
-                </p>
-                {user.shopName && (
-                  <p
-                    className="text-xs mt-0.5"
-                    style={{ color: "var(--color-muted-foreground)" }}
-                  >
-                    🏪 {user.shopName}
+    <div className="md:grid md:grid-cols-2 gap-5">
+      {users.map((user) => (
+        <Card
+          key={user._id}
+          className="border hover:shadow-md transition-shadow duration-200"
+        >
+          <CardContent className="p-4">
+            {/* Row 1: Name + status badge */}
+            <div className="flex items-start justify-between gap-3 mb-3">
+              <div className="flex items-center gap-3 min-w-0">
+                {/* Avatar */}
+                <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center shrink-0">
+                  <User className="w-4 h-4 text-muted-foreground" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-foreground truncate">
+                    {user.name}
                   </p>
+                  {user.shopName && (
+                    <div className="flex items-center gap-1 mt-0.5">
+                      <Store className="w-3 h-3 text-muted-foreground shrink-0" />
+                      <p className="text-xs text-muted-foreground truncate">
+                        {user.shopName}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Status badge */}
+              <span
+                className={`text-xs font-semibold px-2.5 py-1 rounded-full shrink-0 ${
+                  user.is_locked
+                    ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                    : "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+                }`}
+              >
+                {user.is_locked ? "Locked" : "Active"}
+              </span>
+            </div>
+
+            {/* Row 2: Email + Joined */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
+              <div className="flex items-center gap-2">
+                <Mail className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                <p className="text-xs text-muted-foreground truncate">
+                  {user.email}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Calendar className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                <p className="text-xs text-muted-foreground">
+                  Joined{" "}
+                  {new Date(user.createdAt).toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                  })}
+                </p>
+              </div>
+            </div>
+
+            <Separator className="mb-3" />
+
+            {/* Row 3: Action */}
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-xs text-muted-foreground">Account access</p>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={isPending}
+                onClick={() => onToggleLock(user._id)}
+                className={`h-7 text-xs gap-1.5 font-medium ${
+                  user.is_locked
+                    ? "text-emerald-600 border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700"
+                    : "text-destructive border-destructive/30 hover:bg-destructive/10 hover:text-destructive"
+                }`}
+              >
+                {user.is_locked ? (
+                  <>
+                    <Unlock className="w-3 h-3" /> Unlock
+                  </>
+                ) : (
+                  <>
+                    <Lock className="w-3 h-3" /> Lock
+                  </>
                 )}
-              </td>
-
-              {/* Email */}
-              <td
-                className="px-4 py-3 text-xs"
-                style={{ color: "var(--color-muted-foreground)" }}
-              >
-                {user.email}
-              </td>
-
-              {/* Joined */}
-              <td
-                className="px-4 py-3 text-xs"
-                style={{ color: "var(--color-muted-foreground)" }}
-              >
-                {new Date(user.createdAt).toLocaleDateString()}
-              </td>
-
-              {/* Status */}
-              <td className="px-4 py-3">
-                <span
-                  className="rounded-full px-2.5 py-1 text-xs font-semibold"
-                  style={{
-                    backgroundColor: user.is_locked ? "#fee2e2" : "#dcfce7",
-                    color: user.is_locked ? "#991b1b" : "#15803d",
-                  }}
-                >
-                  {user.is_locked ? "Locked" : "Active"}
-                </span>
-              </td>
-
-              {/* Action */}
-              <td className="px-4 py-3">
-                <button
-                  onClick={() => onToggleLock(user._id)}
-                  disabled={isPending}
-                  className="rounded-md px-3 py-1 text-xs font-medium hover:opacity-80 disabled:opacity-40 transition-all border"
-                  style={{
-                    borderColor: user.is_locked
-                      ? "var(--color-success)"
-                      : "var(--color-destructive)",
-                    color: user.is_locked
-                      ? "var(--color-success)"
-                      : "var(--color-destructive)",
-                  }}
-                >
-                  {user.is_locked ? "Unlock" : "Lock"}
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
     </div>
   );
 }

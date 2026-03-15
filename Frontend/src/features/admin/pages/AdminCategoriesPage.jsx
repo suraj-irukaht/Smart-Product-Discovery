@@ -7,8 +7,22 @@ import {
 } from "@features/admin";
 import useCategories from "@/features/categories/hooks/useCategory";
 import Pagination from "@/components/ui/Pagination";
-import LoadingSpinner from "@components/ui/LoadingSpinner";
 import { PAGINATION } from "@/config/config.pagination";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Tags, Plus, Pencil, Trash2, Calendar, X } from "lucide-react";
 
 const EMPTY_FORM = { name: "", description: "" };
 
@@ -26,7 +40,7 @@ export default function AdminCategoriesPage() {
 
   const [form, setForm] = useState(EMPTY_FORM);
   const [editingId, setEditingId] = useState(null);
-  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+  const [deleteId, setDeleteId] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [errors, setErrors] = useState({});
 
@@ -64,6 +78,8 @@ export default function AdminCategoriesPage() {
     setForm({ name: cat.name, description: cat.description || "" });
     setEditingId(cat._id);
     setShowForm(true);
+    // scroll form into view on mobile
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleCancel = () => {
@@ -73,293 +89,241 @@ export default function AdminCategoriesPage() {
     setErrors({});
   };
 
-  const handleDelete = () => {
-    if (!confirmDeleteId) return;
-    deleteCategory(confirmDeleteId, {
-      onSuccess: () => setConfirmDeleteId(null),
-    });
-  };
-
-  const inputClass =
-    "w-full border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500";
-  const inputStyle = {
-    borderColor: "var(--color-border)",
-    backgroundColor: "var(--color-background)",
-    color: "var(--color-foreground)",
-  };
-
   return (
-    <div
-      className="min-h-screen p-6"
-      style={{ backgroundColor: "var(--color-background)" }}
-    >
-      <div style={{ maxWidth: "800px", margin: "0 auto" }}>
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+    <div className="min-h-screen bg-background p-4 md:p-6">
+      <div className="mx-auto space-y-5">
+        {/* ── Header ──────────────────────────────────── */}
+        <div className="flex items-center justify-between">
           <div>
-            <h1
-              className="text-2xl font-bold"
-              style={{ color: "var(--color-foreground)" }}
-            >
-              Manage Categories
-            </h1>
-            <p
-              className="text-sm mt-1"
-              style={{ color: "var(--color-muted-foreground)" }}
-            >
+            <h1 className="text-2xl font-bold text-foreground">Categories</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">
               {data?.total ?? 0} total categories
             </p>
           </div>
-          {!showForm && (
-            <button
-              onClick={() => setShowForm(true)}
-              className="px-4 py-2 rounded-lg text-sm font-medium text-white hover:opacity-90"
-              style={{ backgroundColor: "var(--color-primary)" }}
-            >
-              + New Category
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            <div className="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-950 flex items-center justify-center">
+              <Tags className="w-5 h-5 text-purple-500" />
+            </div>
+            {!showForm && (
+              <Button
+                size="sm"
+                onClick={() => setShowForm(true)}
+                className="gap-1.5"
+              >
+                <Plus className="w-4 h-4" />
+                New
+              </Button>
+            )}
+          </div>
         </div>
 
-        {/* Create / Edit Form */}
+        {/* ── Create / Edit Form ───────────────────────── */}
         {showForm && (
-          <div
-            className="rounded-xl border p-5 mb-6"
-            style={{
-              borderColor: "var(--color-border)",
-              backgroundColor: "var(--color-card)",
-            }}
-          >
-            <h2
-              className="font-semibold mb-4"
-              style={{ color: "var(--color-foreground)" }}
-            >
-              {editingId ? "Edit Category" : "New Category"}
-            </h2>
-            <div className="space-y-3">
-              <div>
-                <label
-                  className="block text-sm font-medium mb-1"
-                  style={{ color: "var(--color-foreground)" }}
-                >
-                  Name *
-                </label>
-                <input
-                  value={form.name}
-                  onChange={(e) =>
-                    setForm((p) => ({ ...p, name: e.target.value }))
-                  }
-                  placeholder="e.g. Electronics"
-                  className={inputClass}
-                  style={inputStyle}
-                />
-                {errors.name && (
-                  <p className="text-xs text-red-500 mt-1">{errors.name}</p>
-                )}
-              </div>
-              <div>
-                <label
-                  className="block text-sm font-medium mb-1"
-                  style={{ color: "var(--color-foreground)" }}
-                >
-                  Description
-                </label>
-                <textarea
-                  rows={3}
-                  value={form.description}
-                  onChange={(e) =>
-                    setForm((p) => ({ ...p, description: e.target.value }))
-                  }
-                  placeholder="Optional description..."
-                  className={inputClass}
-                  style={inputStyle}
-                />
-              </div>
-              <div className="flex gap-2 justify-end pt-1">
+          <Card className="border">
+            <CardContent className="p-5">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="font-semibold text-foreground">
+                  {editingId ? "Edit Category" : "New Category"}
+                </h2>
                 <button
                   onClick={handleCancel}
-                  className="px-4 py-2 rounded-lg border text-sm hover:opacity-80"
-                  style={{
-                    borderColor: "var(--color-border)",
-                    color: "var(--color-foreground)",
-                  }}
+                  className="text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleSubmit}
-                  disabled={creating || updating}
-                  className="px-4 py-2 rounded-lg text-sm font-medium text-white disabled:opacity-60 hover:opacity-90"
-                  style={{ backgroundColor: "var(--color-primary)" }}
-                >
-                  {creating || updating
-                    ? "Saving..."
-                    : editingId
-                      ? "Update"
-                      : "Create"}
+                  <X className="w-4 h-4" />
                 </button>
               </div>
-            </div>
-          </div>
-        )}
 
-        {/* Loading */}
-        {isLoading && <LoadingSpinner />}
+              <div className="space-y-3">
+                {/* Name */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-muted-foreground">
+                    Name <span className="text-destructive">*</span>
+                  </label>
+                  <Input
+                    value={form.name}
+                    onChange={(e) =>
+                      setForm((p) => ({ ...p, name: e.target.value }))
+                    }
+                    placeholder="e.g. Electronics"
+                    className={errors.name ? "border-destructive" : ""}
+                  />
+                  {errors.name && (
+                    <p className="text-xs text-destructive">{errors.name}</p>
+                  )}
+                </div>
 
-        {/* Empty */}
-        {!isLoading && categories.length === 0 && (
-          <div
-            className="text-center py-20 rounded-xl border-2 border-dashed"
-            style={{ borderColor: "var(--color-border)" }}
-          >
-            <p className="text-4xl mb-3">🏷️</p>
-            <p
-              className="font-medium"
-              style={{ color: "var(--color-foreground)" }}
-            >
-              No categories yet
-            </p>
-          </div>
-        )}
+                {/* Description */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-muted-foreground">
+                    Description
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={form.description}
+                    onChange={(e) =>
+                      setForm((p) => ({ ...p, description: e.target.value }))
+                    }
+                    placeholder="Optional description..."
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring resize-none text-foreground placeholder:text-muted-foreground"
+                  />
+                </div>
 
-        {/* Table */}
-        {!isLoading && categories.length > 0 && (
-          <div
-            className="rounded-xl border overflow-hidden"
-            style={{
-              borderColor: "var(--color-border)",
-              backgroundColor: "var(--color-card)",
-            }}
-          >
-            <table className="w-full text-sm">
-              <thead>
-                <tr
-                  style={{
-                    borderBottom: "1px solid var(--color-border)",
-                    backgroundColor: "var(--color-muted)",
-                  }}
-                >
-                  {["Name", "Description", "Created", "Actions"].map((h) => (
-                    <th
-                      key={h}
-                      className="px-4 py-3 text-left font-medium"
-                      style={{ color: "var(--color-muted-foreground)" }}
-                    >
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {categories.map((cat, i) => (
-                  <tr
-                    key={cat._id}
-                    style={{
-                      borderBottom:
-                        i < categories.length - 1
-                          ? "1px solid var(--color-border)"
-                          : "none",
-                    }}
+                {/* Actions */}
+                <div className="flex gap-2 justify-end pt-1">
+                  <Button variant="outline" size="sm" onClick={handleCancel}>
+                    Cancel
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={handleSubmit}
+                    disabled={creating || updating}
                   >
-                    <td
-                      className="px-4 py-3 font-medium capitalize"
-                      style={{ color: "var(--color-foreground)" }}
-                    >
-                      {cat.name}
-                    </td>
+                    {creating || updating
+                      ? "Saving..."
+                      : editingId
+                        ? "Update"
+                        : "Create"}
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
-                    <td
-                      className="px-4 py-3 text-xs"
-                      style={{ color: "var(--color-muted-foreground)" }}
-                    >
-                      {cat.description || "—"}
-                    </td>
+        <Separator />
 
-                    <td
-                      className="px-4 py-3 text-xs"
-                      style={{ color: "var(--color-muted-foreground)" }}
-                    >
-                      {new Date(cat.createdAt).toLocaleDateString()}
-                    </td>
+        {/* ── Loading skeletons ────────────────────────── */}
+        {isLoading && (
+          <div className="space-y-3">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Card key={i} className="animate-pulse">
+                <CardContent className="p-4 space-y-2">
+                  <div className="h-4 w-1/3 bg-muted rounded" />
+                  <div className="h-3 w-2/3 bg-muted rounded" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
 
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => handleEdit(cat)}
-                          className="rounded-md px-3 py-1 text-xs font-medium border hover:opacity-80"
-                          style={{
-                            borderColor: "var(--color-primary)",
-                            color: "var(--color-primary)",
-                          }}
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => setConfirmDeleteId(cat._id)}
-                          disabled={deleting}
-                          className="rounded-md px-3 py-1 text-xs font-medium border hover:opacity-80 disabled:opacity-40"
-                          style={{ borderColor: "#ef4444", color: "#ef4444" }}
-                        >
-                          Delete
-                        </button>
+        {/* ── Empty ───────────────────────────────────── */}
+        {!isLoading && categories.length === 0 && (
+          <Card className="border-dashed">
+            <CardContent className="flex flex-col items-center justify-center py-20 gap-3">
+              <Tags className="w-10 h-10 text-muted-foreground" />
+              <p className="font-medium text-foreground">No categories yet</p>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setShowForm(true)}
+                className="gap-1.5"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                Create first category
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* ── Category Cards ───────────────────────────── */}
+        {!isLoading && categories.length > 0 && (
+          <div className=" md:grid md:grid-cols-2 gap-5">
+            {categories.map((cat) => (
+              <Card
+                key={cat._id}
+                className={`border hover:shadow-md transition-shadow duration-200 ${
+                  editingId === cat._id ? "ring-2 ring-primary" : ""
+                }`}
+              >
+                <CardContent className="p-4">
+                  {/* Row 1: Name + actions */}
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-8 h-8 rounded-lg bg-purple-50 dark:bg-purple-950 flex items-center justify-center shrink-0">
+                        <Tags className="w-4 h-4 text-purple-500" />
                       </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-foreground capitalize">
+                          {cat.name}
+                        </p>
+                        {cat.description && (
+                          <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
+                            {cat.description}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex gap-1.5 shrink-0">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEdit(cat)}
+                        className="h-7 w-7 p-0 text-primary border-primary/30 hover:bg-primary/10 hover:text-primary"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setDeleteId(cat._id)}
+                        disabled={deleting}
+                        className="h-7 w-7 p-0 text-destructive border-destructive/30 hover:bg-destructive/10 hover:text-destructive"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Row 2: Joined date */}
+                  <div className="flex items-center gap-1.5 mt-3">
+                    <Calendar className="w-3 h-3 text-muted-foreground" />
+                    <p className="text-[11px] text-muted-foreground">
+                      Created{" "}
+                      {new Date(cat.createdAt).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      })}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         )}
 
         <Pagination totalPages={totalPages} />
       </div>
 
-      {/* Delete Confirm Modal */}
-      {confirmDeleteId && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center"
-          style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
-        >
-          <div
-            className="rounded-xl p-6 w-full max-w-sm mx-4"
-            style={{ backgroundColor: "var(--color-card)" }}
-          >
-            <h3
-              className="text-lg font-semibold mb-2"
-              style={{ color: "var(--color-foreground)" }}
-            >
-              Delete Category
-            </h3>
-            <p
-              className="text-sm mb-6"
-              style={{ color: "var(--color-muted-foreground)" }}
-            >
+      {/* ── Delete Confirm Dialog ────────────────────────── */}
+      <AlertDialog
+        open={!!deleteId}
+        onOpenChange={(open) => !open && setDeleteId(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Category</AlertDialogTitle>
+            <AlertDialogDescription>
               This will not delete associated products but they will lose their
-              category. Are you sure?
-            </p>
-            <div className="flex gap-3 justify-end">
-              <button
-                onClick={() => setConfirmDeleteId(null)}
-                className="px-4 py-2 rounded-lg border text-sm"
-                style={{
-                  borderColor: "var(--color-border)",
-                  color: "var(--color-foreground)",
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDelete}
-                disabled={deleting}
-                className="px-4 py-2 rounded-lg text-sm font-medium text-white disabled:opacity-60"
-                style={{ backgroundColor: "#ef4444" }}
-              >
-                {deleting ? "Deleting..." : "Delete"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+              category. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() =>
+                deleteCategory(deleteId, { onSuccess: () => setDeleteId(null) })
+              }
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

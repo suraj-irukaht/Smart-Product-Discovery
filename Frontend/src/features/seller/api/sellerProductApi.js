@@ -26,6 +26,3 @@ export const updateProfile = (data) =>
 
 export const fetchSellerOrders = (params) =>
   api.get(`/orders/seller?${new URLSearchParams(params)}`).then((r) => r.data);
-
-export const updateSellerOrderStatus = ({ orderId, status }) =>
-  api.patch(`/orders/seller/${orderId}/status`, { status }).then((r) => r.data);

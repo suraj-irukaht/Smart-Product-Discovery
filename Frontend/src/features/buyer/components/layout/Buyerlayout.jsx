@@ -1,33 +1,53 @@
 /**
  * BuyerLayout.jsx
- *
- * Top navbar layout for all buyer pages.
- * Shows logo, search bar (navigates to /products), cart badge,
- * user name, edit profile dropdown, preferences, and logout.
- * Mobile: collapses to hamburger menu.
- *
- * Used in: AppRoutes.jsx buyer route group
+ * Top navbar + slide-in sidebar on mobile — same pattern as AdminLayout.
  */
-import { useState, useRef, useEffect } from "react";
-import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import {
+  Link,
+  NavLink,
+  Outlet,
+  useLocation,
+  useNavigate,
+} from "react-router-dom";
 import { useLogout } from "@features/auth";
 import { useAuthStore } from "@/store/authStore";
 import { useGetCart } from "../../hooks/useCart";
 import PreferencesModal from "../modals/PreferencesModal";
+import BuyerProfileModal from "../modals/ProfileModal";
+import { Separator } from "@/components/ui/separator";
+import {
+  ShoppingCart,
+  Search,
+  Menu,
+  X,
+  Home,
+  Package,
+  ClipboardList,
+  Heart,
+  Star,
+  LogOut,
+  UserPen,
+} from "lucide-react";
+
+const NAV_LINKS = [
+  { to: "/", label: "Home", icon: Home, end: true },
+  { to: "/products", label: "Products", icon: Package },
+  { to: "/orders", label: "My Orders", icon: ClipboardList },
+  { to: "/favorites", label: "Favorites", icon: Heart },
+];
 
 export default function BuyerLayout() {
   const { handleLogout } = useLogout();
   const { user } = useAuthStore();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
   const { data } = useGetCart();
 
-  console.log(data);
-
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [prefOpen, setPrefOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
   const [search, setSearch] = useState("");
-  const dropdownRef = useRef(null);
 
   const cartCount = data?.cart?.length ?? 0;
   const initials =
@@ -38,214 +58,241 @@ export default function BuyerLayout() {
       .toUpperCase()
       .slice(0, 2) ?? "B";
 
-  // close dropdown on outside click
+  // Close sidebar on route change
   useEffect(() => {
-    const handler = (e) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target))
-        setDropdownOpen(false);
+    setSidebarOpen(false);
+  }, [pathname]);
+
+  // Lock body scroll when sidebar open
+  useEffect(() => {
+    document.body.style.overflow = sidebarOpen ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
     };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
+  }, [sidebarOpen]);
 
   const handleSearch = (e) => {
     e.preventDefault();
-    if (search.trim())
+    if (search.trim()) {
       navigate(`/products?search=${encodeURIComponent(search.trim())}`);
+      setSearch("");
+    }
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      {/* ── Navbar ────────────────────────────────── */}
-      <nav className="sticky top-0 z-50 bg-white border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center gap-4">
-          {/* Logo */}
-          <Link to="/" className="flex items-center gap-2 shrink-0 mr-auto">
-            <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center">
-              🛍️
+    <div className="min-h-screen bg-background">
+      {/* ── Mobile backdrop ─────────────────────────── */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-30 bg-black/40 backdrop-blur-sm md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* ── Slide-in sidebar (mobile only) ──────────── */}
+      <aside
+        className={`
+        fixed top-0 left-0 z-40 h-dvh w-64 flex flex-col
+        bg-card border-r border-border
+        transition-transform duration-200 ease-in-out
+        lg:hidden
+        ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
+      `}
+      >
+        {/* Logo + close */}
+        <div className="flex items-center justify-between px-4 py-4 border-b border-border">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-foreground flex items-center justify-center shrink-0">
+              <ShoppingCart className="w-4 h-4 text-background" />
             </div>
-            <span className="font-bold text-slate-900 text-sm tracking-tight hidden sm:block">
+            <span className="font-bold text-sm text-foreground tracking-tight">
+              SmartDiscover
+            </span>
+          </div>
+          <button
+            onClick={() => setSidebarOpen(false)}
+            className="text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* User info */}
+        <div className="px-4 py-4 border-b border-border">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-full bg-foreground flex items-center justify-center text-background text-xs font-bold shrink-0">
+              {initials}
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-foreground truncate">
+                {user?.name}
+              </p>
+              <p className="text-xs text-muted-foreground truncate">
+                {user?.email}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Search */}
+        <div className="px-4 py-3 border-b border-border">
+          <form onSubmit={handleSearch} className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search products…"
+              className="w-full pl-8 pr-3 py-2 rounded-xl border border-border bg-muted text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-ring"
+            />
+          </form>
+        </div>
+
+        {/* Nav links */}
+        <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
+          {NAV_LINKS.map(({ to, label, icon: Icon, end }) => (
+            <NavLink
+              key={to}
+              to={to}
+              end={end}
+              className={({ isActive }) =>
+                `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+                  isActive
+                    ? "bg-foreground text-background"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                }`
+              }
+            >
+              <Icon className="w-4 h-4 shrink-0" />
+              {label}
+            </NavLink>
+          ))}
+
+          <Separator className="my-2" />
+
+          <button
+            onClick={() => {
+              setProfileOpen(true);
+              setSidebarOpen(false);
+            }}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+          >
+            <UserPen className="w-4 h-4 shrink-0" />
+            Edit Profile
+          </button>
+
+          <button
+            onClick={() => {
+              setPrefOpen(true);
+              setSidebarOpen(false);
+            }}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+          >
+            <Star className="w-4 h-4 shrink-0" />
+            My Preferences
+          </button>
+        </nav>
+
+        <Separator />
+
+        {/* Logout */}
+        <div className="px-3 py-4">
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors"
+          >
+            <LogOut className="w-4 h-4 shrink-0" />
+            Logout
+          </button>
+        </div>
+      </aside>
+
+      {/* ── Top Navbar ───────────────────────────────── */}
+      <nav className="sticky top-0 z-20 bg-card border-b border-border">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center gap-3">
+          {/* Hamburger — mobile only */}
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="lg:hidden flex items-center justify-center w-9 h-9 rounded-xl hover:bg-muted transition-colors text-foreground shrink-0"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+
+          {/* Logo */}
+          <Link to="/" className="flex items-center gap-2 shrink-0">
+            <div className="w-8 h-8 rounded-xl bg-foreground flex items-center justify-center">
+              <ShoppingCart className="w-4 h-4 text-background" />
+            </div>
+            <span className="font-bold text-foreground text-sm tracking-tight hidden sm:block">
               SmartDiscover
             </span>
           </Link>
 
-          {/* Spacer on mobile */}
-          <div className="flex-1 md:hidden flex" />
+          {/* Search bar — desktop */}
+          <form
+            onSubmit={handleSearch}
+            className="hidden lg:flex flex-1 max-w-xs mx-4 relative"
+          >
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search products…"
+              className="w-full pl-9 pr-4 py-2 rounded-xl border border-border bg-muted text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-ring"
+            />
+          </form>
 
-          {/* Nav links — desktop */}
-          <div className="hidden md:flex items-center gap-1">
-            <NavLink
-              to="/"
-              end
-              className={({ isActive }) =>
-                `px-3 py-2 rounded-lg text-sm font-medium transition-colors ${isActive ? "bg-indigo-50 text-indigo-600" : "text-slate-600 hover:bg-slate-100"}`
-              }
-            >
-              Home
-            </NavLink>
-            <NavLink
-              to="/products"
-              className={({ isActive }) =>
-                `px-3 py-2 rounded-lg text-sm font-medium transition-colors ${isActive ? "bg-indigo-50 text-indigo-600" : "text-slate-600 hover:bg-slate-100"}`
-              }
-            >
-              Products
-            </NavLink>
-            <NavLink
-              to="/orders"
-              className={({ isActive }) =>
-                `px-3 py-2 rounded-lg text-sm font-medium transition-colors ${isActive ? "bg-indigo-50 text-indigo-600" : "text-slate-600 hover:bg-slate-100"}`
-              }
-            >
-              My Orders
-            </NavLink>
-            <NavLink
-              to="/favorites"
-              className={({ isActive }) =>
-                `text-sm font-medium transition-colors ${isActive ? "text-indigo-600" : "text-slate-600 hover:text-slate-900"}`
-              }
-            >
-              ❤️ Favorites
-            </NavLink>
+          {/* Desktop nav links */}
+          <div className="hidden lg:flex items-center gap-0.5 ml-auto">
+            {NAV_LINKS.map(({ to, label, end }) => (
+              <NavLink
+                key={to}
+                to={to}
+                end={end}
+                className={({ isActive }) =>
+                  `px-3 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
+                    isActive
+                      ? "bg-muted text-foreground"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  }`
+                }
+              >
+                {label}
+              </NavLink>
+            ))}
           </div>
 
-          {/* Cart */}
           <Link
             to="/cart"
-            className="relative flex items-center justify-center w-10 h-10 rounded-xl hover:bg-slate-100 transition-colors shrink-0"
+            className="relative ml-auto flex items-center justify-center w-9 h-9 rounded-xl hover:bg-muted transition-colors shrink-0"
           >
-            <span className="text-xl">🛒</span>
+            <ShoppingCart className="w-5 h-5 text-foreground" />
             {cartCount > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 w-5 h-5 rounded-full bg-indigo-600 text-white text-xs font-bold flex items-center justify-center">
+              <span className="absolute -top-1 -right-1 min-w-[1.1rem] h-[1.1rem] px-1 rounded-full bg-foreground text-background text-[10px] font-bold flex items-center justify-center">
                 {cartCount > 9 ? "9+" : cartCount}
               </span>
             )}
           </Link>
 
-          {/* User dropdown — desktop */}
-          <div className="hidden md:block relative" ref={dropdownRef}>
+          {/* Avatar button — desktop only */}
+          <div className="hidden lg:flex items-center gap-2 shrink-0">
             <button
-              onClick={() => setDropdownOpen((p) => !p)}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-slate-200 hover:bg-slate-50 transition-colors cursor-pointer"
+              onClick={() => setProfileOpen(true)}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-border hover:bg-muted transition-colors"
             >
-              <div className="w-6 h-6 rounded-full bg-indigo-500 flex items-center justify-center text-white text-xs font-bold">
+              <div className="w-6 h-6 rounded-full bg-foreground flex items-center justify-center text-background text-[10px] font-bold">
                 {initials}
               </div>
-              <span className="text-sm font-medium text-slate-700">
-                {user?.name?.split(" ")[0]}
-              </span>
-              <span className="text-slate-400 text-xs">
-                {dropdownOpen ? "▲" : "▼"}
-              </span>
+              <UserPen className="w-3.5 h-3.5 text-muted-foreground" />
             </button>
 
-            {dropdownOpen && (
-              <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-2xl border border-slate-100 shadow-lg py-2 z-50">
-                <div className="px-4 py-2 border-b border-slate-50 mb-1">
-                  <p className="text-xs font-semibold text-slate-800 truncate">
-                    {user?.name}
-                  </p>
-                  <p className="text-xs text-slate-400 truncate">
-                    {user?.email}
-                  </p>
-                </div>
-                <button
-                  onClick={() => {
-                    setPrefOpen(true);
-                    setDropdownOpen(false);
-                  }}
-                  className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer"
-                >
-                  ⭐ My Preferences
-                </button>
-                <div className="h-px bg-slate-100 my-1" />
-                <button
-                  onClick={handleLogout}
-                  className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors cursor-pointer"
-                >
-                  🚪 Logout
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* Mobile hamburger */}
-          <button
-            onClick={() => setMenuOpen((p) => !p)}
-            className="md:hidden flex flex-col gap-1.5 p-2 rounded-lg hover:bg-slate-100 cursor-pointer"
-          >
-            <span className="block w-5 h-0.5 bg-slate-600 rounded" />
-            <span className="block w-5 h-0.5 bg-slate-600 rounded" />
-            <span className="block w-5 h-0.5 bg-slate-600 rounded" />
-          </button>
-        </div>
-
-        {/* Mobile menu */}
-        {menuOpen && (
-          <div className="md:hidden border-t border-slate-100 bg-white px-4 py-3 space-y-1">
-            {/* Mobile search */}
-            <form
-              onSubmit={(e) => {
-                handleSearch(e);
-                setMenuOpen(false);
-              }}
-              className="mb-3"
-            >
-              <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search products..."
-                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm outline-none focus:ring-2 focus:ring-indigo-300 bg-slate-50"
-              />
-            </form>
-            <NavLink
-              to="/"
-              end
-              onClick={() => setMenuOpen(false)}
-              className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-700 hover:bg-slate-100"
-            >
-              🏠 Home
-            </NavLink>
-            <NavLink
-              to="/products"
-              onClick={() => setMenuOpen(false)}
-              className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-700 hover:bg-slate-100"
-            >
-              📦 Products
-            </NavLink>
-            <NavLink
-              to="/orders"
-              onClick={() => setMenuOpen(false)}
-              className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-700 hover:bg-slate-100"
-            >
-              🛒 My Orders
-            </NavLink>
-            <button
-              onClick={() => {
-                setPrefOpen(true);
-                setMenuOpen(false);
-              }}
-              className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-700 hover:bg-slate-100 cursor-pointer"
-            >
-              ⭐ My Preferences
-            </button>
-            <div className="h-px bg-slate-100 my-1" />
-            <div className="flex items-center gap-2 px-3 py-2">
-              <div className="w-7 h-7 rounded-full bg-indigo-500 flex items-center justify-center text-white text-xs font-bold">
-                {initials}
-              </div>
-              <span className="text-sm font-medium text-slate-700">
-                {user?.name}
-              </span>
-            </div>
             <button
               onClick={handleLogout}
-              className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium text-red-500 hover:bg-red-50 cursor-pointer"
+              className="flex items-center justify-center w-9 h-9 rounded-xl border border-border text-muted-foreground hover:text-destructive hover:bg-destructive/10 hover:border-destructive/30 transition-colors"
             >
-              🚪 Logout
+              <LogOut className="w-4 h-4" />
             </button>
           </div>
-        )}
+        </div>
       </nav>
 
       <main>
@@ -253,6 +300,10 @@ export default function BuyerLayout() {
       </main>
 
       <PreferencesModal isOpen={prefOpen} onClose={() => setPrefOpen(false)} />
+      <BuyerProfileModal
+        isOpen={profileOpen}
+        onClose={() => setProfileOpen(false)}
+      />
     </div>
   );
 }

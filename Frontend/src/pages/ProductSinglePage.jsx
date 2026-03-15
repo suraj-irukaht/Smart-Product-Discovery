@@ -2,8 +2,8 @@
  * ProductSinglePage.jsx
  *
  * Product detail page — orchestration only.
- * Tracks recently viewed on mount.
- * Wires cart, favorites, reviews, related products.
+ * Tracks recently viewed on mount via getProductByIdController (backend handles it).
+ * Wires cart, favorites, reviews, and smart discovery sections.
  *
  * Route: /products/:id
  * Layout: BuyerLayout
@@ -11,8 +11,7 @@
 import api from "@/services/api";
 import { useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import { get } from "@/utils/request";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useGetCart, useAddToCart } from "@features/buyer/hooks/useCart";
 import {
   useGetFavorites,
@@ -33,6 +32,16 @@ const useProduct = (id) =>
 
 export default function ProductSinglePage() {
   const { id } = useParams();
+  const queryClient = useQueryClient();
+
+  // Invalidate re-engage cache when user leaves this page
+  // so homepage "Still Interested" refetches immediately on return
+  useEffect(() => {
+    return () => {
+      queryClient.invalidateQueries({ queryKey: ["re-engage"] });
+      queryClient.invalidateQueries({ queryKey: ["recently-viewed"] });
+    };
+  }, [id]);
 
   const { data: productData, isLoading } = useProduct(id);
   const { data: cartData } = useGetCart();
@@ -41,8 +50,6 @@ export default function ProductSinglePage() {
   const { add: addFav, remove: removeFav } = useToggleFavorite();
 
   const product = productData?.product ?? productData;
-
-  console.log(product);
 
   const cartItemIds = new Set(
     cartData?.cart?.map((c) => String(c.product_id?._id || c.product_id)) ?? [],
@@ -55,28 +62,24 @@ export default function ProductSinglePage() {
   const isInCart = cartItemIds.has(String(id));
   const isFavorited = favoritedIds.has(String(id));
 
-  const handleToggleFav = () => {
-    if (isFavorited) {
-      removeFav(id);
-    } else {
-      addFav(id);
-    }
-  };
+  const handleToggleFav = () => (isFavorited ? removeFav(id) : addFav(id));
 
   const handleAddToCart = () => addToCart({ product_id: id, quantity: 1 });
 
-  const handleToggleRelatedFav = (productId) => {
-    if (favoritedIds.has(String(productId))) {
-      removeFav(productId);
-    } else {
-      addFav(productId);
-    }
+  // Shared props passed down to RelatedProducts
+  const discoveryProps = {
+    productId: id,
+    cartItemIds,
+    favoritedIds,
+    onAddToCart: (pid) => addToCart({ product_id: pid, quantity: 1 }),
+    onToggleFav: (pid) =>
+      favoritedIds.has(String(pid)) ? removeFav(pid) : addFav(pid),
   };
 
-  /* ── Loading ──────────────────────────────────────── */
+  /* ── Loading ─────────────────────────────────────────────── */
   if (isLoading) return <ProductSkeleton />;
 
-  /* ── Not found ────────────────────────────────────── */
+  /* ── Not found ───────────────────────────────────────────── */
   if (!product)
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
@@ -149,24 +152,19 @@ export default function ProductSinglePage() {
         <ProductReviews productId={id} />
 
         <div className="h-px bg-slate-200" />
-        <h1>Related</h1>
-        {/* Related products */}
-        {product.category_id._id && (
-          <RelatedProducts
-            categoryId={product.category_id._id}
-            excludeId={id}
-            cartItemIds={cartItemIds}
-            favoritedIds={favoritedIds}
-            onAddToCart={(pid) => addToCart({ product_id: pid, quantity: 1 })}
-            onToggleFav={handleToggleRelatedFav}
-          />
-        )}
+
+        {/* Smart discovery sections:
+            - Similar to This
+            - Others Also Viewed
+            - Complete the Set
+            All 3 are handled inside RelatedProducts using productId only */}
+        <RelatedProducts {...discoveryProps} />
       </div>
     </div>
   );
 }
 
-/* ── Page Skeleton ─────────────────────────────────── */
+/* ── Page Skeleton ───────────────────────────────────────────── */
 function ProductSkeleton() {
   return (
     <div className="min-h-screen bg-slate-50">

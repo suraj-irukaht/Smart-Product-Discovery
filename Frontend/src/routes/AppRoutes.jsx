@@ -1,7 +1,12 @@
 import { BrowserRouter, Routes, Route, Outlet } from "react-router-dom";
 import ProtectedRoute from "./ProtectedRoute";
 
-import { LoginPage, RegisterPage } from "@features/auth";
+import {
+  LoginPage,
+  RegisterPage,
+  ForgotPasswordPage,
+  ResetPasswordPage,
+} from "@features/auth";
 
 import HomePage from "../pages/HomePage";
 import ProductPage from "../pages/ProductPage";
@@ -10,6 +15,8 @@ import CartPage from "../pages/CartPage";
 import OrderPage from "../pages/OrderPage";
 import ProductSinglePage from "../pages/ProductSinglePage";
 import FavoritesPage from "../pages/FavoritesPage";
+import ScrollToTop from "@/components/ScrollToTop";
+
 import {
   AdminDashboard,
   AdminManageOrderPage,
@@ -33,6 +40,7 @@ import {
 export default function AppRoutes() {
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <Routes>
         <Route element={<ProtectedRoute allowedRoles={["ADMIN"]} />}>
           <Route
@@ -54,6 +62,8 @@ export default function AppRoutes() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/seller/register" element={<SellerRegisterPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
 
         <Route element={<ProtectedRoute allowedRoles={["BUYER"]} />}>
           <Route element={<BuyerLayout />}>

@@ -3,6 +3,8 @@ const {
   registerUserController,
   loginUserController,
   logoutUserController,
+  forgotPasswordController,
+  resetPasswordController,
 } = require("../controllers/auth.controller");
 
 const setRole = require("../middlewares/setRole.middleware");
@@ -20,5 +22,7 @@ router.post("/seller/register", setRole("SELLER"), registerUserController);
 
 router.post("/login", loginUserController);
 router.post("/logout", authMiddleware, logoutUserController);
+router.post("/forgot-password", forgotPasswordController);
+router.post("/reset-password", resetPasswordController);
 
 module.exports = router;

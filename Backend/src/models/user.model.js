@@ -38,7 +38,6 @@ const userSchema = new mongoose.Schema(
     shopName: {
       type: String,
       trim: true,
-      // not required — only sellers have it
     },
     preferences: [
       {
@@ -50,20 +49,17 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+
+    // ── Password reset ──────────────────────────────────
+    resetToken: { type: String, select: false },
+    resetTokenExpiry: { type: Date, select: false },
   },
-  {
-    // Automatically add createdAt and updatedAt fields
-    timestamps: true,
-  },
+  { timestamps: true },
 );
 
-userSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) {
-    return;
-  }
-  const hash = await bcrypt.hash(this.password, 10);
-  this.password = hash;
-  //next();
+userSchema.pre("save", async function () {
+  if (!this.isModified("password")) return;
+  this.password = await bcrypt.hash(this.password, 10);
   return;
 });
 
@@ -72,5 +68,4 @@ userSchema.methods.comparePassword = async function (password) {
 };
 
 const userModel = mongoose.model("AppUser", userSchema);
-
 module.exports = userModel;

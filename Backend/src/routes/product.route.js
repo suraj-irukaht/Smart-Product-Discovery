@@ -1,7 +1,6 @@
 const express = require("express");
 const router = express.Router();
 
-const discoveryRoutes = require("./product.discovery.routes");
 const sellerRoutes = require("./product.seller.routes");
 const reviewRoutes = require("./product.review.route");
 
@@ -20,14 +19,6 @@ router.get(
   roleMiddleware("BUYER", "ADMIN"),
   getProductController,
 );
-
-/**
- * ===============================
- * Discovery Routes
- * ===============================
- */
-
-router.use("/", discoveryRoutes);
 
 /**
  * ===============================

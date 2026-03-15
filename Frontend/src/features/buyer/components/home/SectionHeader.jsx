@@ -1,39 +1,33 @@
 /**
  * SectionHeader.jsx
- *
- * Reusable header row for homepage sections.
- * Left: title + subtitle. Right: optional "View all" link.
- *
- * Props:
- * - title      : string
- * - subtitle   : string (optional)
- * - link       : string (optional) — href for view all
- * - linkLabel  : string (optional, default "View all →")
+ * Props: title, subtitle, link, linkLabel
  */
 import { Link } from "react-router-dom";
+import { ArrowRight } from "lucide-react";
 
 export default function SectionHeader({
   title,
   subtitle,
   link,
-  linkLabel = "View all →",
+  linkLabel = "View all",
 }) {
   return (
-    <div className="flex items-end justify-between mb-4">
+    <div className="flex items-end justify-between mb-5">
       <div>
-        <h2 className="text-lg font-bold text-slate-900 tracking-tight">
+        <h2 className="text-2xl font-bold text-foreground tracking-tight">
           {title}
         </h2>
         {subtitle && (
-          <p className="text-sm text-slate-400 mt-0.5">{subtitle}</p>
+          <p className="text-sm text-muted-foreground mt-0.5">{subtitle}</p>
         )}
       </div>
       {link && (
         <Link
           to={link}
-          className="text-xs font-semibold text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-full hover:bg-indigo-100 transition-colors flex-shrink-0"
+          className="flex items-center gap-1 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors shrink-0"
         >
           {linkLabel}
+          <ArrowRight className="w-3.5 h-3.5" />
         </Link>
       )}
     </div>

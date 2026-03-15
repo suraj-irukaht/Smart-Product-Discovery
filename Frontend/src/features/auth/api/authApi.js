@@ -9,3 +9,7 @@ export const register = (data, path = "/auth/register") => post(path, data);
 
 // POST /api/auth/logout
 export const logout = () => post("/auth/logout");
+// POST /api/auth/forgor
+export const forgot = () => post("/auth/forgot-password");
+// POST /api/auth/reset
+export const reset = () => post("/auth/reset-password");

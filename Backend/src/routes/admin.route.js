@@ -8,6 +8,7 @@ const {
   toggleLockUser,
   deleteProductByAdmin,
   toggleProductStatus,
+  getAdminCharts,
 } = require("../controllers/admin.controller");
 const {
   getAllOrderController,
@@ -19,6 +20,7 @@ router.use(authMiddleware);
 router.use(roleMiddleware("ADMIN"));
 
 router.get("/stats", getAdminStats);
+router.get("/charts", getAdminCharts);
 router.get("/orders", getAllOrderController);
 router.get("/orders/:orderId", getOrderDetailsController);
 router.patch("/orders/:orderId/status", updateOrderStatusController);

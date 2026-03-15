@@ -1,4 +1,3 @@
-// Backend/src/scripts/seedAdmin.js
 require("dotenv").config();
 const mongoose = require("mongoose");
 const userModel = require("../models/user.model");

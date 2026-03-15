@@ -1,9 +1,7 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import { login, register, logout } from "../api/authApi";
+import { login, register, logout, reset, forgot } from "../api/authApi";
 import { useAuthStore } from "@/store/authStore";
 
 export const PASSWORD_RULES = {
@@ -37,6 +35,7 @@ const validatePassword = (password) => {
   return null;
 };
 
+// ── Login ────────────────────────────────────────────────────
 export const useLogin = () => {
   const [loading, setLoading] = useState(false);
   const { setAuth } = useAuthStore();
@@ -62,6 +61,7 @@ export const useLogin = () => {
   return { handleLogin, loading };
 };
 
+// ── Register ─────────────────────────────────────────────────
 export const useRegister = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -82,6 +82,7 @@ export const useRegister = () => {
       toast.error(err);
       return;
     }
+
     if (data.password !== data.confirmPassword) {
       toast.error("Passwords do not match");
       return;
@@ -89,9 +90,7 @@ export const useRegister = () => {
     setLoading(true);
     try {
       const { confirmPassword, ...payload } = data;
-
       const endpoint = isSeller ? "/auth/seller/register" : "/auth/register";
-
       await register(payload, endpoint);
       toast.success("Account created! Please sign in.");
       navigate("/login");
@@ -102,13 +101,78 @@ export const useRegister = () => {
   return { handleRegister, loading };
 };
 
+// ── Logout ───────────────────────────────────────────────────
 export const useLogout = () => {
   const { clearAuth } = useAuthStore();
   const navigate = useNavigate();
+
   const handleLogout = () => {
     clearAuth();
     toast.success("Logged out");
     navigate("/");
   };
   return { handleLogout };
+};
+
+// ── Forgot password ──────────────────────────────────────────
+export const useForgotPassword = () => {
+  const [loading, setLoading] = useState(false);
+
+  const handleForgot = async (email, onSuccess) => {
+    if (!email.trim()) {
+      toast.error("Please enter your email");
+      return;
+    }
+    setLoading(true);
+    try {
+      await forgot({ email });
+      onSuccess?.();
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Something went wrong");
+    } finally {
+      setLoading(false);
+    }
+  };
+  return { handleForgot, loading };
+};
+
+// ── Reset password ───────────────────────────────────────────
+export const useResetPassword = () => {
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+
+  const handleReset = async ({ token, password, confirm }, onSuccess) => {
+    if (!password) {
+      toast.error("Password is required");
+      return;
+    }
+    const err = validatePassword(password);
+    if (err) {
+      toast.error(err);
+      return;
+    }
+    if (password !== confirm) {
+      toast.error("Passwords do not match");
+      return;
+    }
+    if (!token) {
+      toast.error("Invalid reset link");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await reset({ token, password });
+      toast.success("Password updated! Please sign in.");
+      onSuccess?.();
+      setTimeout(() => navigate("/login"), 1500);
+    } catch (err) {
+      toast.error(
+        err?.response?.data?.message || "Invalid or expired reset link",
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+  return { handleReset, loading };
 };

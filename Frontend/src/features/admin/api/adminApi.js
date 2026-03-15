@@ -2,7 +2,7 @@ import { get } from "@/utils/request";
 import api from "@/services/api";
 
 export const fetchAdminStats = () => get("/admin/stats");
-
+export const fetchAdminCharts = () => get("/admin/charts");
 export const fetchAllOrders = (page = 1, limit = 7) =>
   get(`/admin/orders?page=${page}&limit=${limit}`);
 

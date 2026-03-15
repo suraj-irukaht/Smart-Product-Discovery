@@ -18,7 +18,6 @@ import {
   getProfile,
   updateProfile,
   fetchSellerOrders,
-  updateSellerOrderStatus,
 } from "../api/sellerProductApi";
 
 import { useAuthStore } from "@/store/authStore";
@@ -123,16 +122,3 @@ export const useGetSellerOrders = (params) =>
     queryKey: ["seller-orders", params],
     queryFn: () => fetchSellerOrders(params),
   });
-
-export const useUpdateSellerOrderStatus = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: updateSellerOrderStatus,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["seller-orders"] });
-      toast.success("Order status updated");
-    },
-    onError: (err) =>
-      toast.error(err?.response?.data?.message || "Failed to update status"),
-  });
-};

@@ -65,10 +65,4 @@ router.get(
   getSellerOrdersController,
 );
 
-router.patch(
-  "/seller/:orderId/status",
-  authMiddleware,
-  roleMiddleware("SELLER"),
-  updateSellerOrderStatusController,
-);
 module.exports = router;

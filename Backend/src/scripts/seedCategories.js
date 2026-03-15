@@ -1,4 +1,3 @@
-// Backend: scripts/seedCategories.js
 const mongoose = require("mongoose");
 const categoryModel = require("../models/category.model");
 require("dotenv").config();

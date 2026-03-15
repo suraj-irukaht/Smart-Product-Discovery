@@ -1,17 +1,19 @@
 /**
  * ProfileModal.jsx
- *
- * Modal for sellers to update their profile information.
- * Fields: email, phone, shopName, and optional password change.
- * Pre-populates form with current user data from the profile query.
- * Shows password fields only when user wants to change password.
- *
- * Props:
- * - isOpen: boolean
- * - onClose: () => void
+ * Props: isOpen, onClose
  */
 import { useState, useEffect } from "react";
 import { useGetProfile, useUpdateProfile } from "@features/seller";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
+import { X, Eye, EyeOff, ChevronDown, ChevronUp, User } from "lucide-react";
+
+const EMPTY_PASSWORDS = {
+  currentPassword: "",
+  newPassword: "",
+  confirmPassword: "",
+};
 
 export default function ProfileModal({ isOpen, onClose }) {
   const { data } = useGetProfile();
@@ -21,23 +23,24 @@ export default function ProfileModal({ isOpen, onClose }) {
     email: "",
     phone: "",
     shopName: "",
-    currentPassword: "",
-    newPassword: "",
-    confirmPassword: "",
+    ...EMPTY_PASSWORDS,
   });
-  const [showPassword, setShowPassword] = useState(false);
+  const [showPassSection, setShowPassSection] = useState(false);
+  const [visible, setVisible] = useState({
+    current: false,
+    new: false,
+    confirm: false,
+  });
   const [errors, setErrors] = useState({});
 
-  // Pre-populate form when profile loads
   useEffect(() => {
-    if (user) {
+    if (user)
       setForm((p) => ({
         ...p,
         email: user.email || "",
         phone: user.phone || "",
         shopName: user.shopName || "",
       }));
-    }
   }, [user]);
 
   const { mutate: updateProfile, isPending } = useUpdateProfile(onClose);
@@ -45,7 +48,7 @@ export default function ProfileModal({ isOpen, onClose }) {
   const validate = () => {
     const e = {};
     if (!form.email.trim()) e.email = "Email is required";
-    if (showPassword) {
+    if (showPassSection) {
       if (!form.currentPassword)
         e.currentPassword = "Current password required";
       if (!form.newPassword) e.newPassword = "New password required";
@@ -59,239 +62,196 @@ export default function ProfileModal({ isOpen, onClose }) {
 
   const handleSubmit = () => {
     if (!validate()) return;
-
     const payload = {
       email: form.email,
       phone: form.phone,
       shopName: form.shopName,
     };
-
-    if (showPassword) {
+    if (showPassSection) {
       payload.currentPassword = form.currentPassword;
       payload.newPassword = form.newPassword;
     }
-
     updateProfile(payload);
   };
 
   const handleChange = (e) =>
     setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
 
+  const toggle = (field) => setVisible((p) => ({ ...p, [field]: !p[field] }));
+
   if (!isOpen) return null;
 
-  const inputClass =
-    "w-full border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500";
-  const inputStyle = {
-    borderColor: "var(--color-border)",
-    backgroundColor: "var(--color-background)",
-    color: "var(--color-foreground)",
-  };
-
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center"
-      style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
-    >
-      <div
-        className="rounded-xl w-full max-w-md mx-4 overflow-hidden"
-        style={{ backgroundColor: "var(--color-card)" }}
-      >
-        {/* Header */}
-        <div
-          className="flex items-center justify-between px-6 py-4 border-b"
-          style={{ borderColor: "var(--color-border)" }}
-        >
-          <div>
-            <h2
-              className="font-semibold text-base"
-              style={{ color: "var(--color-foreground)" }}
-            >
-              Edit Profile
-            </h2>
-            <p
-              className="text-xs mt-0.5"
-              style={{ color: "var(--color-muted-foreground)" }}
-            >
-              {user?.name}
-            </p>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+      <div className="bg-card border border-border rounded-2xl w-full max-w-md mx-4 overflow-hidden shadow-xl">
+        {/* ── Header ──────────────────────────────── */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-full bg-violet-500 flex items-center justify-center text-white text-sm font-bold shrink-0">
+              {user?.name
+                ?.split(" ")
+                .map((n) => n[0])
+                .join("")
+                .toUpperCase()
+                .slice(0, 2) ?? "S"}
+            </div>
+            <div>
+              <h2 className="font-semibold text-sm text-foreground">
+                Edit Profile
+              </h2>
+              <p className="text-xs text-muted-foreground">{user?.name}</p>
+            </div>
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center rounded-full hover:opacity-70"
-            style={{ color: "var(--color-muted-foreground)" }}
+            className="text-muted-foreground hover:text-foreground transition-colors"
           >
-            ✕
+            <X className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Body */}
-        <div className="px-6 py-5 space-y-4 max-h-[70vh] overflow-y-auto">
+        {/* ── Body ────────────────────────────────── */}
+        <div className="px-6 py-5 space-y-4 max-h-[65vh] overflow-y-auto">
           {/* Email */}
-          <div>
-            <label
-              className="block text-sm font-medium mb-1"
-              style={{ color: "var(--color-foreground)" }}
-            >
-              Email
-            </label>
-            <input
+          <Field label="Email" error={errors.email}>
+            <Input
               name="email"
               value={form.email}
               onChange={handleChange}
-              className={inputClass}
-              style={inputStyle}
+              className={errors.email ? "border-destructive" : ""}
             />
-            {errors.email && (
-              <p className="text-xs text-red-500 mt-1">{errors.email}</p>
-            )}
-          </div>
+          </Field>
 
           {/* Phone */}
-          <div>
-            <label
-              className="block text-sm font-medium mb-1"
-              style={{ color: "var(--color-foreground)" }}
-            >
-              Phone
-            </label>
-            <input
+          <Field label="Phone">
+            <Input
               name="phone"
               value={form.phone}
               onChange={handleChange}
               placeholder="+358 40 123 4567"
-              className={inputClass}
-              style={inputStyle}
             />
-          </div>
+          </Field>
 
           {/* Shop Name */}
-          <div>
-            <label
-              className="block text-sm font-medium mb-1"
-              style={{ color: "var(--color-foreground)" }}
-            >
-              Shop Name
-            </label>
-            <input
+          <Field label="Shop Name">
+            <Input
               name="shopName"
               value={form.shopName}
               onChange={handleChange}
               placeholder="Your shop name"
-              className={inputClass}
-              style={inputStyle}
             />
-          </div>
+          </Field>
+
+          <Separator />
 
           {/* Password toggle */}
-          <div>
-            <button
-              type="button"
-              onClick={() => {
-                setShowPassword((p) => !p);
-                setErrors({});
-              }}
-              className="text-sm font-medium hover:opacity-80"
-              style={{ color: "var(--color-primary)" }}
-            >
-              {showPassword ? "▲ Cancel password change" : "▼ Change password"}
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setShowPassSection((p) => !p);
+              setErrors({});
+            }}
+            className="flex items-center gap-1.5 text-sm font-medium text-violet-600 hover:text-violet-700 transition-colors"
+          >
+            {showPassSection ? (
+              <>
+                <ChevronUp className="w-3.5 h-3.5" /> Cancel password change
+              </>
+            ) : (
+              <>
+                <ChevronDown className="w-3.5 h-3.5" /> Change password
+              </>
+            )}
+          </button>
 
           {/* Password fields */}
-          {showPassword && (
-            <div className="space-y-3 pt-1">
-              <div>
-                <label
-                  className="block text-sm font-medium mb-1"
-                  style={{ color: "var(--color-foreground)" }}
-                >
-                  Current Password
-                </label>
-                <input
+          {showPassSection && (
+            <div className="space-y-3">
+              <Field label="Current Password" error={errors.currentPassword}>
+                <PasswordInput
                   name="currentPassword"
-                  type="password"
                   value={form.currentPassword}
                   onChange={handleChange}
-                  className={inputClass}
-                  style={inputStyle}
+                  visible={visible.current}
+                  onToggle={() => toggle("current")}
+                  hasError={!!errors.currentPassword}
                 />
-                {errors.currentPassword && (
-                  <p className="text-xs text-red-500 mt-1">
-                    {errors.currentPassword}
-                  </p>
-                )}
-              </div>
-              <div>
-                <label
-                  className="block text-sm font-medium mb-1"
-                  style={{ color: "var(--color-foreground)" }}
-                >
-                  New Password
-                </label>
-                <input
+              </Field>
+
+              <Field label="New Password" error={errors.newPassword}>
+                <PasswordInput
                   name="newPassword"
-                  type="password"
                   value={form.newPassword}
                   onChange={handleChange}
-                  className={inputClass}
-                  style={inputStyle}
+                  visible={visible.new}
+                  onToggle={() => toggle("new")}
+                  hasError={!!errors.newPassword}
                 />
-                {errors.newPassword && (
-                  <p className="text-xs text-red-500 mt-1">
-                    {errors.newPassword}
-                  </p>
-                )}
-              </div>
-              <div>
-                <label
-                  className="block text-sm font-medium mb-1"
-                  style={{ color: "var(--color-foreground)" }}
-                >
-                  Confirm New Password
-                </label>
-                <input
+              </Field>
+
+              <Field
+                label="Confirm New Password"
+                error={errors.confirmPassword}
+              >
+                <PasswordInput
                   name="confirmPassword"
-                  type="password"
                   value={form.confirmPassword}
                   onChange={handleChange}
-                  className={inputClass}
-                  style={inputStyle}
+                  visible={visible.confirm}
+                  onToggle={() => toggle("confirm")}
+                  hasError={!!errors.confirmPassword}
                 />
-                {errors.confirmPassword && (
-                  <p className="text-xs text-red-500 mt-1">
-                    {errors.confirmPassword}
-                  </p>
-                )}
-              </div>
+              </Field>
             </div>
           )}
         </div>
 
-        {/* Footer */}
-        <div
-          className="flex gap-3 justify-end px-6 py-4 border-t"
-          style={{ borderColor: "var(--color-border)" }}
-        >
-          <button
-            onClick={onClose}
-            className="px-4 py-2 rounded-lg border text-sm hover:opacity-80"
-            style={{
-              borderColor: "var(--color-border)",
-              color: "var(--color-foreground)",
-            }}
-          >
+        {/* ── Footer ──────────────────────────────── */}
+        <div className="flex gap-2 justify-end px-6 py-4 border-t border-border">
+          <Button variant="outline" size="sm" onClick={onClose}>
             Cancel
-          </button>
-          <button
-            onClick={handleSubmit}
-            disabled={isPending}
-            className="px-4 py-2 rounded-lg text-sm font-medium text-white disabled:opacity-60 hover:opacity-90"
-            style={{ backgroundColor: "var(--color-primary)" }}
-          >
-            {isPending ? "Saving..." : "Save Changes"}
-          </button>
+          </Button>
+          <Button size="sm" onClick={handleSubmit} disabled={isPending}>
+            {isPending ? "Saving…" : "Save Changes"}
+          </Button>
         </div>
       </div>
+    </div>
+  );
+}
+
+/* ── Field wrapper ──────────────────────────────────────────── */
+function Field({ label, error, children }) {
+  return (
+    <div className="space-y-1.5">
+      <label className="text-xs font-medium text-muted-foreground">
+        {label}
+      </label>
+      {children}
+      {error && <p className="text-xs text-destructive">{error}</p>}
+    </div>
+  );
+}
+
+/* ── Password input with eye toggle ────────────────────────── */
+function PasswordInput({ name, value, onChange, visible, onToggle, hasError }) {
+  return (
+    <div className="relative">
+      <Input
+        name={name}
+        type={visible ? "text" : "password"}
+        value={value}
+        onChange={onChange}
+        className={`pr-10 ${hasError ? "border-destructive" : ""}`}
+      />
+      <button
+        type="button"
+        onClick={onToggle}
+        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+        tabIndex={-1}
+      >
+        {visible ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+      </button>
     </div>
   );
 }

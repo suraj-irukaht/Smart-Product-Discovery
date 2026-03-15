@@ -13,10 +13,18 @@ import {
   createCategory,
   updateCategory,
   deleteCategory,
+  fetchAdminCharts,
 } from "../api/adminApi";
 
 export const useAdminStats = () =>
   useQuery({ queryKey: ["admin-stats"], queryFn: fetchAdminStats });
+
+export const useAdminCharts = () =>
+  useQuery({
+    queryKey: ["admin-charts"],
+    queryFn: fetchAdminCharts,
+    staleTime: 5 * 60 * 1000, // 5 min — chart data changes slowly
+  });
 
 export const useAllProducts = (params = {}) =>
   useQuery({

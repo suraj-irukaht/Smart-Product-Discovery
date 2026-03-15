@@ -1,4 +1,3 @@
-// src/pages/EditProductPage.jsx
 import { useParams, useNavigate } from "react-router-dom";
 import useCategories from "@/features/categories/hooks/useCategory";
 import { useUpdateProduct, ProductForm } from "@features/seller";

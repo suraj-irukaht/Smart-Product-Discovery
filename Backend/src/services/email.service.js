@@ -1,51 +1,34 @@
-const nodemailer = require("nodemailer");
+const { Resend } = require("resend");
 
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    type: "OAuth2",
-    user: process.env.EMAIL_USER,
-    clientId: process.env.CLIENT_ID,
-    clientSecret: process.env.CLIENT_SECRET,
-    refreshToken: process.env.REFRESH_TOKEN,
-  },
-});
+const resend = new Resend(process.env.RESEND_API_KEY);
 
-// Verify the connection configuration
-transporter.verify((error, success) => {
-  if (error) {
-    console.error("Error connecting to email server:", error);
-  } else {
-    console.log("Email server is ready to send messages");
-  }
-});
+const FROM = "SmartDiscover <onboarding@resend.dev>";
 
-// Function to send email
-const sendEmail = async (to, subject, text, html) => {
-  try {
-    const info = await transporter.sendMail({
-      from: `"Banking Ledger" <${process.env.EMAIL_USER}>`, // sender address
-      to, // list of receivers
-      subject, // Subject line
-      text, // plain text body
-      html, // html body
-    });
-
-    console.log("Message sent: %s", info.messageId);
-    console.log("Preview URL: %s", nodemailer.getTestMessageUrl(info));
-  } catch (error) {
-    console.error("Error sending email:", error);
-  }
-};
-
-async function sendRegistrationEmail(userEmail, name) {
-  const subject = "Welcome to Banking Ledger!";
-  const text = `Hi ${name},\n\nThank you for registering with Banking Ledger. We're excited to have you on board!\n\nBest regards,\nThe Banking Ledger Team`;
-  const html = `<p>Hi ${name},</p><p>Thank you for registering with <strong>Banking Ledger</strong>. We're excited to have you on board!</p><p>Best regards,<br>The Banking Ledger Team</p>`;
-
-  await sendEmail(userEmail, subject, text, html);
+/**
+ * Send password reset email
+ */
+async function sendPasswordResetEmail(to, name, resetLink) {
+  console.log("🔗 Reset link for", to, "→", resetLink);
+  await resend.emails.send({
+    from: FROM,
+    to,
+    subject: "Reset your SmartDiscover password",
+    html: `
+      <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px;background:#fff;border-radius:12px;border:1px solid #e5e7eb">
+        <h2 style="margin:0 0 8px;font-size:20px;color:#111">Hi ${name},</h2>
+        <p style="color:#6b7280;font-size:14px;margin:0 0 24px">
+          We received a request to reset your password. Click the button below — this link expires in <strong>1 hour</strong>.
+        </p>
+        <a href="${resetLink}"
+          style="display:inline-block;background:#111;color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-size:14px;font-weight:600">
+          Reset Password
+        </a>
+        <p style="color:#9ca3af;font-size:12px;margin:24px 0 0">
+          If you didn't request this, you can safely ignore this email. Your password won't change.
+        </p>
+      </div>
+    `,
+  });
 }
 
-module.exports = {
-  sendRegistrationEmail,
-};
+module.exports = { sendPasswordResetEmail };

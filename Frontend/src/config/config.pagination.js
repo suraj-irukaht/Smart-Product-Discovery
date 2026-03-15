@@ -1,5 +1,4 @@
-// src/config/pagination.config.js
 export const PAGINATION = {
   DEFAULT_PAGE: 1,
-  DEFAULT_LIMIT: 7,
+  DEFAULT_LIMIT: 10,
 };

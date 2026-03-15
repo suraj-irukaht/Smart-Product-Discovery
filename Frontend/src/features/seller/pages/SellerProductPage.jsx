@@ -58,7 +58,7 @@ export default function SellerProductsPage() {
 
   return (
     <div className="min-h-screen p-6 bg-gray-50">
-      <div className="max-w-[900px] mx-auto">
+      <div className="max-w-[900px] mx-auto pb-14">
         {/* HEADER */}
         <Header total={total} />
 
