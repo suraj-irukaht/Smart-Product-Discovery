@@ -14,21 +14,43 @@ const userModel = require("../models/user.model");
 const updateProfileController = async (req, res) => {
   try {
     const userId = req.user._id;
-    const { email, phone, shopName, currentPassword, newPassword } = req.body;
+
+    const {
+      email,
+      phone,
+      shopName,
+      currentPassword,
+      newPassword,
+      preferences, // ✅ ADD THIS
+    } = req.body;
 
     const user = await userModel.findById(userId).select("+password");
-    if (!user) return res.status(404).json({ message: "User not found" });
 
-    // Check email uniqueness if changing email
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Email change
     if (email && email !== user.email) {
       const exists = await userModel.findOne({ email });
-      if (exists)
+
+      if (exists) {
         return res.status(400).json({ message: "Email already in use" });
+      }
+
       user.email = email;
     }
 
     if (phone) user.phone = phone;
-    if (shopName && user.role === "SELLER") user.shopName = shopName;
+
+    if (shopName && user.role === "SELLER") {
+      user.shopName = shopName;
+    }
+
+    // ✅ SAVE PREFERENCES
+    if (Array.isArray(preferences)) {
+      user.preferences = preferences;
+    }
 
     // Password change
     if (newPassword) {
@@ -37,13 +59,16 @@ const updateProfileController = async (req, res) => {
           .status(400)
           .json({ message: "Current password is required" });
       }
+
       const isMatch = await user.comparePassword(currentPassword);
+
       if (!isMatch) {
         return res
           .status(400)
           .json({ message: "Current password is incorrect" });
       }
-      user.password = newPassword; // pre-save hook will hash it
+
+      user.password = newPassword;
     }
 
     await user.save();
@@ -57,11 +82,15 @@ const updateProfileController = async (req, res) => {
         phone: user.phone,
         shopName: user.shopName,
         role: user.role,
+        preferences: user.preferences, // ✅ RETURN IT
       },
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Failed to update profile" });
+
+    res.status(500).json({
+      message: "Failed to update profile",
+    });
   }
 };
 

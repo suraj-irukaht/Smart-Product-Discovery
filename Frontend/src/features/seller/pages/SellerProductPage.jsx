@@ -10,7 +10,7 @@ import {
   useDeleteProduct,
 } from "@features/seller";
 
-import Pagination from "@/components/ui/Pagination";
+import Pagination from "@/components/ui/PaginationUi";
 import useCategories from "@/features/categories/hooks/useCategory";
 import { PAGINATION } from "@/config/config.pagination";
 

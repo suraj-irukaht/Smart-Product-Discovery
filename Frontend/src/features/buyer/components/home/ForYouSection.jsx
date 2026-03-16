@@ -55,13 +55,15 @@ export default function ForYouSection({
 
   const { data: products = [], isLoading } = useForYouProducts(prefIds);
 
+  console.log(products);
+
   // ── No preferences set ──────────────────────────────────
   if (!prefIds.length) {
     return (
       <section>
         <SectionHeader
-          title="✨ For You"
-          subtitle="Picked based on what you love"
+          title="✨Your Preferences"
+          subtitle="Picked based on what you like"
         />
         <div className="flex flex-col items-center justify-center py-14 gap-4 bg-card border border-dashed border-border rounded-2xl">
           <div className="w-12 h-12 rounded-xl bg-amber-50 dark:bg-amber-950 flex items-center justify-center">

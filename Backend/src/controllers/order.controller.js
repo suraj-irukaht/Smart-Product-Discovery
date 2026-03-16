@@ -104,7 +104,11 @@ const getOrderController = async (req, res) => {
     const userId = req.user._id;
     const { page, limit, skip } = getPagination(req);
     const filter = { user_id: userId };
-    const orders = await orderModel.find(filter).skip(skip).limit(limit);
+    const orders = await orderModel
+      .find(filter)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
     const totalOrders = await orderModel.countDocuments(filter);
     res.status(200).json({
       ...getPaginationMeta(totalOrders, page, limit),

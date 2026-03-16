@@ -16,7 +16,7 @@
  * - onReset       : () => void
  */
 import ProductCard from "@/components/ui/ProductCard";
-import Pagination from "@/components/ui/Pagination";
+import Pagination from "@/components/ui/PaginationUi";
 
 export default function ProductsGrid({
   products,

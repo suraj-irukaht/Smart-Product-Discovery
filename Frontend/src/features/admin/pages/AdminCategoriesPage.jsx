@@ -6,7 +6,7 @@ import {
   useDeleteCategory,
 } from "@features/admin";
 import useCategories from "@/features/categories/hooks/useCategory";
-import Pagination from "@/components/ui/Pagination";
+import Pagination from "@/components/ui/PaginationUi";
 import { PAGINATION } from "@/config/config.pagination";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";

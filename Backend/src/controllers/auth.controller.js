@@ -1,26 +1,33 @@
 const userModel = require("../models/user.model");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
-const { sendPasswordResetEmail } = require("../services/email.service");
+const {
+  sendPasswordResetEmail,
+  sendRegistrationEmail,
+} = require("../services/email.service");
 const { createNotification } = require("./notification.controller");
 
+function generateToken(userId) {
+  return jwt.sign({ userId }, process.env.JWT_SECRET_KEY, {
+    expiresIn: "2d",
+  });
+}
+
 /**
- * @route   POST /api/auth/register
- * @access  Public
+ * REGISTER
  */
 async function registerUserController(req, res) {
-  const { name, email, password, is_locked, shopName } = req.body;
+  const { name, email, password, is_locked, shopName, preferences } = req.body;
   const role = req.registrationRole || "BUYER";
 
-  const isExists = await userModel.findOne({ email });
-  if (isExists) {
+  const existing = await userModel.findOne({ email });
+
+  if (existing) {
     return res.status(422).json({
       message: "User already exists with this email",
-      status: "failed",
     });
   }
 
-  // ── Create user ──────────────────────────────────────────
   const user = await userModel.create({
     email,
     name,
@@ -28,102 +35,107 @@ async function registerUserController(req, res) {
     role,
     is_locked,
     shopName,
+    preferences,
   });
 
-  // ── Notify admin (fire-and-forget) ───────────────────────
+  // Welcome email
+  sendRegistrationEmail(user.email, user.name).catch(console.error);
+
+  // Admin notification
   createNotification({
     type: role === "SELLER" ? "NEW_SELLER" : "NEW_USER",
     title: role === "SELLER" ? "New Seller Joined" : "New Buyer Registered",
     message: `${name} (${email}) just signed up`,
     link: role === "SELLER" ? "/admin/sellers" : "/admin/users",
   });
-  // ────────────────────────────────────────────────────────
 
-  const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET_KEY, {
-    expiresIn: "2d",
+  const token = generateToken(user._id);
+
+  res.cookie("token", token, {
+    httpOnly: true,
+    sameSite: "strict",
+    secure: process.env.NODE_ENV === "production",
   });
-  res.cookie("token", token, { httpOnly: true });
 
   res.status(201).json({
     user: {
       _id: user._id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      shopName: user.shopName,
-      is_locked: user.is_locked,
+      name,
+      email,
+      role,
+      shopName,
+      preferences: user.preferences,
     },
     token,
   });
 }
 
 /**
- * @route   POST /api/auth/login
- * @access  Public
+ * LOGIN
  */
 async function loginUserController(req, res) {
   const { email, password } = req.body;
 
   const user = await userModel.findOne({ email }).select("+password");
 
-  if (!user) {
-    return res.status(401).json({ message: "Email or password is incorrect" });
+  if (!user || !(await user.comparePassword(password))) {
+    return res.status(401).json({
+      message: "Email or password is incorrect",
+    });
   }
 
-  if (!(await user.comparePassword(password))) {
-    return res.status(401).json({ message: "Email or password is incorrect" });
-  }
+  const token = generateToken(user._id);
 
-  const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET_KEY, {
-    expiresIn: "2d",
+  res.cookie("token", token, {
+    httpOnly: true,
+    sameSite: "strict",
+    secure: process.env.NODE_ENV === "production",
   });
-
-  res.cookie("token", token);
 
   res.status(200).json({
     user: {
       _id: user._id,
       name: user.name,
-      email: user.email,
+      email,
       role: user.role,
+      preferences: user.preferences,
     },
     token,
   });
 }
 
+/**
+ * LOGOUT
+ */
 async function logoutUserController(req, res) {
   res.clearCookie("token");
   res.status(200).json({ message: "Logged out successfully" });
 }
 
 /**
- * @route   POST /api/auth/forgot-password
- * @access  Public
+ * FORGOT PASSWORD
  */
 async function forgotPasswordController(req, res) {
   const { email } = req.body;
-  if (!email) return res.status(400).json({ message: "Email is required" });
 
   const user = await userModel.findOne({ email });
 
-  // Always respond 200 — don't reveal whether email exists
   if (!user) {
     return res
       .status(200)
       .json({ message: "If that email exists, a reset link has been sent." });
   }
 
-  // Generate token
   const token = crypto.randomBytes(32).toString("hex");
-  const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
 
-  user.resetToken = token;
-  user.resetTokenExpiry = expires;
+  const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+
+  user.resetToken = hashedToken;
+  user.resetTokenExpiry = Date.now() + 60 * 60 * 1000;
   await user.save();
 
   const resetLink = `${process.env.CLIENT_URL}/reset-password?token=${token}`;
 
-  // Send email (fire-and-forget — don't fail the request if email fails)
   sendPasswordResetEmail(user.email, user.name, resetLink).catch(console.error);
 
   res
@@ -132,52 +144,41 @@ async function forgotPasswordController(req, res) {
 }
 
 /**
- * @route   POST /api/auth/reset-password
- * @access  Public
+ * RESET PASSWORD
  */
 async function resetPasswordController(req, res) {
   const { token, password } = req.body;
 
-  if (!token || !password) {
-    return res
-      .status(400)
-      .json({ message: "Token and new password are required" });
-  }
-  if (password.length < 8) {
-    return res
-      .status(400)
-      .json({ message: "Password must be at least 8 characters" });
-  }
+  const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
 
   const user = await userModel
-    .findOne({ resetToken: token })
-    .select("+resetToken +resetTokenExpiry +password");
+    .findOne({
+      resetToken: hashedToken,
+      resetTokenExpiry: { $gt: Date.now() },
+    })
+    .select("+password");
 
   if (!user) {
-    return res.status(400).json({ message: "Invalid or expired reset link" });
+    return res.status(400).json({
+      message: "Invalid or expired reset link",
+    });
   }
 
-  if (user.resetTokenExpiry < new Date()) {
-    return res
-      .status(400)
-      .json({ message: "Reset link has expired. Please request a new one." });
-  }
-
-  // Update password — pre-save hook will hash it
   user.password = password;
   user.resetToken = undefined;
   user.resetTokenExpiry = undefined;
+
   await user.save();
 
-  res
-    .status(200)
-    .json({ message: "Password reset successfully. You can now sign in." });
+  res.status(200).json({
+    message: "Password reset successfully",
+  });
 }
 
 module.exports = {
   registerUserController,
   loginUserController,
-  logoutUserController,
   forgotPasswordController,
   resetPasswordController,
+  logoutUserController,
 };

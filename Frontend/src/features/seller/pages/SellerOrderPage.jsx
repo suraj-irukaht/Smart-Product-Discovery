@@ -12,7 +12,7 @@
 import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useGetSellerOrders } from "@features/seller/hooks/useSellerProducts";
-import Pagination from "@/components/ui/Pagination";
+import Pagination from "@/components/ui/PaginationUi";
 import { PAGINATION } from "@/config/config.pagination";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";

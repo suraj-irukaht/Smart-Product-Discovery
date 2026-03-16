@@ -2,7 +2,7 @@
 import { useSearchParams } from "react-router-dom";
 import { useUsersByRole, useToggleLockUser } from "@features/admin";
 import AdminUsersTable from "../components/AdminUsersTable";
-import Pagination from "@/components/ui/Pagination";
+import Pagination from "@/components/ui/PaginationUi";
 import { PAGINATION } from "@/config/config.pagination";
 import Breadcrumbs from "@components/ui/Breadcrumbs";
 import LoadingSpinner from "@components/ui/LoadingSpinner";

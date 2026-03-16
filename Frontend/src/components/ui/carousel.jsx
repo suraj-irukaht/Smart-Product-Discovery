@@ -95,7 +95,7 @@ function Carousel({
     >
       <div
         onKeyDownCapture={handleKeyDown}
-        className={cn("relative", className)}
+        className={cn("relative overflow-hidden", className)}
         role="region"
         aria-roledescription="carousel"
         data-slot="carousel"
@@ -114,7 +114,7 @@ function CarouselContent({ className, ...props }) {
     <div ref={carouselRef} className="" data-slot="carousel-content">
       <div
         className={cn(
-          "flex",
+          "flex pb-12",
           orientation === "horizontal" ? "-ml-4" : "-mt-4 flex-col",
           className,
         )}
@@ -156,9 +156,9 @@ function CarouselPrevious({
       variant={variant}
       size={size}
       className={cn(
-        "absolute touch-manipulation rounded-full",
+        "absolute touch-manipulation rounded-full bg-black text-white",
         orientation === "horizontal"
-          ? "top-1/2 -left-12 -translate-y-1/2"
+          ? "right-10 left-auto bottom-0"
           : "-top-12 left-1/2 -translate-x-1/2 rotate-90",
         className,
       )}
@@ -186,9 +186,9 @@ function CarouselNext({
       variant={variant}
       size={size}
       className={cn(
-        "absolute touch-manipulation rounded-full",
+        "absolute touch-manipulation rounded-full bg-black text-white",
         orientation === "horizontal"
-          ? "top-1/2 -right-12 -translate-y-1/2"
+          ? "right-0 left-auto bottom-0"
           : "-bottom-12 left-1/2 -translate-x-1/2 rotate-90",
         className,
       )}

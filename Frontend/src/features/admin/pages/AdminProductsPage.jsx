@@ -6,7 +6,7 @@ import {
   useDeleteProductByAdmin,
 } from "@features/admin";
 import useCategories from "@features/categories/hooks/useCategory";
-import Pagination from "@/components/ui/Pagination";
+import Pagination from "@/components/ui/PaginationUi";
 import { PAGINATION } from "@/config/config.pagination";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";

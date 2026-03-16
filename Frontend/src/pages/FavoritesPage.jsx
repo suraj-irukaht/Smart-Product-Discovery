@@ -14,7 +14,7 @@ import {
 } from "@features/buyer/hooks/useFavorites";
 import { useGetCart, useAddToCart } from "../features/buyer/hooks/useCart";
 import FavoritesGrid from "../features/buyer/components/favotites/FavoritesGrid";
-import Pagination from "@/components/ui/Pagination";
+import Pagination from "@/components/ui/PaginationUi";
 import { PAGINATION } from "@/config/config.pagination";
 
 export default function FavoritesPage() {

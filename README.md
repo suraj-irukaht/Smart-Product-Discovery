@@ -19,6 +19,26 @@ The project follows a **scalable MERN-style architecture** with a modular backen
 
 ---
 
+## Project Highlights
+
+• Full-stack MERN architecture (React + Node.js + MongoDB)
+
+• Feature-based frontend architecture for scalability
+
+• Modular MVC backend design
+
+• Role-based authentication (Buyer, Seller, Admin)
+
+• Product discovery system with trending, popular, and related products
+
+• Real-time notification capability using Server-Sent Events (SSE)
+
+• Pagination utilities for scalable product browsing
+
+• Clean and modern UI with TailwindCSS
+
+---
+
 # Features
 
 ## Product Discovery
@@ -71,19 +91,19 @@ The project follows a **scalable MERN-style architecture** with a modular backen
 
 ### Login Page
 
-![Login](screenshots/login.png)
+Login
 
 ### Home Page
 
-![Home](screenshots/home.png)
+Home
 
 ### Admin Dashboard
 
-![Admin](screenshots/admin-dashboard.png)
+Admin
 
 ### Seller Dashboard
 
-![Seller](screenshots/seller-dashboard.png)
+Seller
 
 ---
 
@@ -259,6 +279,46 @@ frontend/
 
 ---
 
+## Frontend Feature Modules
+
+```
+features/
+│
+├ admin
+│   ├ api
+│   ├ components
+│   ├ hooks
+│   └ pages
+│
+├ auth
+│   ├ api
+│   ├ components
+│   ├ hooks
+│   └ pages
+│
+├ buyer
+│   ├ cart
+│   ├ favorites
+│   ├ orders
+│   └ home
+│
+├ categories
+│   ├ api
+│   ├ components
+│   └ hooks
+│
+├ products
+│   ├ api
+│   ├ components
+│   └ hooks
+│
+└ seller
+    ├ api
+    ├ components
+    ├ pages
+    └ hooks
+```
+
 # Database Design
 
 | Collection    | Description             |
@@ -301,7 +361,7 @@ Authentication is implemented using **JWT tokens**.
 ## Clone Repository
 
 ```bash
-git clone https://github.com/your-username/smart-product-discovery.git
+git clone https://github.com/suraj-irukaht/smart-product-discovery.git
 cd smart-product-discovery
 ```
 

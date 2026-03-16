@@ -14,7 +14,7 @@ import { Link } from "react-router-dom";
 import { useGetOrders, useCancelOrder } from "../features/buyer/hooks/useOrder";
 import OrderCard from "@features/buyer/components/orders/OrderCard";
 import OrdersSkeleton from "@features/buyer/components/orders/OrdersSkeleton";
-import Pagination from "@/components/ui/Pagination";
+import Pagination from "@/components/ui/PaginationUi";
 import { PAGINATION } from "@/config/config.pagination";
 
 export default function OrdersPage() {

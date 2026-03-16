@@ -1,6 +1,6 @@
 import { useSearchParams } from "react-router-dom";
 import { useAllOrders, useUpdateOrderStatus } from "@features/admin";
-import Pagination from "@/components/ui/Pagination";
+import Pagination from "@/components/ui/PaginationUi";
 import { PAGINATION } from "@/config/config.pagination";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -28,8 +28,9 @@ const STATUS_VARIANT = {
 };
 
 const ALLOWED_TRANSITIONS = [
-  "PAID",
+  "PENDING",
   "CONFIRMED",
+  "PAID",
   "SHIPPED",
   "DELIVERED",
   "CANCELLED",
@@ -194,12 +195,17 @@ function OrderCard({ order, isPending, onStatusChange }) {
               No further actions
             </span>
           ) : (
-            <Select disabled={isPending} onValueChange={onStatusChange}>
+            <Select
+              value={order.status}
+              disabled={isPending}
+              onValueChange={onStatusChange}
+            >
               <SelectTrigger className="w-40 h-8 text-xs">
-                <SelectValue placeholder="Change to..." />
+                <SelectValue />
               </SelectTrigger>
+
               <SelectContent>
-                {nextOptions.map((s) => (
+                {ALLOWED_TRANSITIONS.map((s) => (
                   <SelectItem key={s} value={s} className="text-xs">
                     {s}
                   </SelectItem>
